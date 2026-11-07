@@ -1,3 +1,6 @@
 node_modules/
 data/*.json
 .env
+*.zip
+*.log
+serviceAccount*.json

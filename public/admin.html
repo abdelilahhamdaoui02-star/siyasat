@@ -34,16 +34,43 @@ li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .badge.pub{background:#d7efd9;color:#1b5e20}
 .muted{color:var(--muted);font-size:14px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.gate{max-width:420px;margin:60px auto;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:26px}
+.gate h1{font-size:24px;text-align:center}
+.gate .sub{text-align:center;margin-bottom:6px}
+.pw{position:relative}
+.pw button{position:absolute;inset-inline-end:6px;top:50%;transform:translateY(-50%);padding:4px 10px;background:#e6ebf2;color:var(--ink)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#gmsg{margin-top:12px;font-weight:bold;color:var(--bad);min-height:1.5em}
+[hidden]{display:none!important}
 #msg{position:sticky;bottom:12px;margin-top:16px;padding:10px 14px;border-radius:8px;display:none;font-weight:bold}
 #msg.ok{display:block;background:#d7efd9;color:#1b5e20}
 #msg.err{display:block;background:#fde0dd;color:var(--bad)}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="gate" id="gate" hidden>
   <h1>سياسات: الإدارة</h1>
-  <p class="sub">سجل الوسطاء، جيب الروابط، حول النص لتقرير، وانشرو.</p>
-  <div class="warn">هاد الصفحة محمية بكلمة سر (ADMIN_PASSWORD). ما تنشرش الموقع على الأنترنت بلا https وبلا كلمة سر قوية.</div>
+  <p class="sub">سجل الدخول بحساب الأدمين</p>
+  <div id="booting" class="muted" hidden>كنرجعو الجلسة...</div>
+  <form id="loginForm">
+    <label for="gEmail">البريد</label>
+    <input id="gEmail" type="text" dir="ltr" autocomplete="username" placeholder="admin@example.com">
+    <label for="gPwd">كلمة المرور</label>
+    <div class="pw"><input id="gPwd" type="password" dir="ltr" autocomplete="current-password"><button type="button" id="eye" aria-label="إظهار كلمة المرور">👁</button></div>
+    <div class="actions"><button type="submit" id="loginBtn" style="width:100%">دخول</button></div>
+    <div id="gmsg" role="alert"></div>
+    <p class="muted">حساب الأدمين كيتخلق مرة وحدة من Firebase Console (شوف DEPLOY.md).</p>
+  </form>
+</div>
+
+<div class="wrap" id="panel" hidden>
+  <div class="top">
+    <div>
+      <h1>سياسات: الإدارة</h1>
+      <p class="sub">سجل الوسطاء، جيب الروابط، حول النص لتقرير، وانشرو.</p>
+    </div>
+    <div><span id="who" class="muted" dir="ltr"></span> <button id="logout" class="sec sm">خروج</button></div>
+  </div>
 
   <section>
     <h2>1. الوسطاء (المواقع الرسمية)</h2>
@@ -129,16 +156,155 @@ function say(t, ok = true) {
   say.t = setTimeout(() => (msg.className = ""), 6000);
 }
 
-async function api(method, url, body) {
+/* ---------- الدخول عبر Firebase (REST، بحال spesocial) ---------- */
+const RT_KEY = "siyasat:admin:rt";
+const EM_KEY = "siyasat:admin:email";
+const store = {
+  get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { sessionStorage.setItem(k, v); } catch {} },
+  remove: (k) => { try { sessionStorage.removeItem(k); } catch {} },
+};
+let CFG = null;
+let session = { idToken: null, exp: 0 };
+
+const AUTH_ERR = {
+  INVALID_LOGIN_CREDENTIALS: "البريد أو كلمة المرور غير صحيحة.",
+  EMAIL_NOT_FOUND: "البريد غير موجود.",
+  INVALID_PASSWORD: "كلمة المرور غير صحيحة.",
+  INVALID_EMAIL: "البريد غير صالح.",
+  USER_DISABLED: "الحساب معطّل.",
+  TOO_MANY_ATTEMPTS_TRY_LATER: "محاولات كثيرة، عاود من بعد شوية.",
+  OPERATION_NOT_ALLOWED: "الدخول بالبريد وكلمة المرور ما مفعّلش فـ Firebase Authentication.",
+};
+
+async function loadCfg() {
+  if (CFG) return CFG;
+  const r = await fetch("/api/firebase-config");
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || "Firebase ما مضبوطش");
+  CFG = d;
+  return d;
+}
+function setSession(d) {
+  session = {
+    idToken: d.idToken || d.id_token,
+    exp: Date.now() + (parseInt(d.expiresIn || d.expires_in || "3600", 10) - 60) * 1000,
+  };
+  store.set(RT_KEY, d.refreshToken || d.refresh_token);
+}
+async function signIn(email, pwd) {
+  const cfg = await loadCfg();
+  const r = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + encodeURIComponent(cfg.apiKey), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password: pwd, returnSecureToken: true }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const code = String((d.error && d.error.message) || "").split(" ")[0].split(":")[0];
+    throw new Error(AUTH_ERR[code] || "فشل الدخول" + (code ? " (" + code + ")" : ""));
+  }
+  setSession(d);
+  store.set(EM_KEY, email);
+}
+async function refresh() {
+  const rt = store.get(RT_KEY);
+  if (!rt) throw new Error("انتهت الجلسة، سجل الدخول من جديد.");
+  const cfg = await loadCfg();
+  const r = await fetch("https://securetoken.googleapis.com/v1/token?key=" + encodeURIComponent(cfg.apiKey), {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(rt),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error("انتهت الجلسة، سجل الدخول من جديد.");
+  setSession(d);
+}
+async function token() {
+  if (!session.idToken || Date.now() > session.exp) await refresh();
+  return session.idToken;
+}
+function clearSession() {
+  session = { idToken: null, exp: 0 };
+  store.remove(RT_KEY);
+  store.remove(EM_KEY);
+}
+
+async function rawApi(method, url, body) {
+  const t = await token();
   const r = await fetch(url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + t },
     body: body ? JSON.stringify(body) : undefined,
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.error || "وقع خطأ");
-  return d;
+  return { r, d };
 }
+async function api(method, url, body) {
+  let res;
+  try { res = await rawApi(method, url, body); }
+  catch (e) { showLogin(e.message); throw e; }
+  if (res.r.status === 401) {
+    clearSession();
+    showLogin("انتهت الجلسة، سجل الدخول من جديد.");
+    throw new Error("انتهت الجلسة");
+  }
+  if (!res.r.ok) throw new Error(res.d.error || "وقع خطأ");
+  return res.d;
+}
+
+/* ---------- الواجهة: دخول / لوحة ---------- */
+let started = false;
+function showLogin(text, booting) {
+  $("panel").hidden = true;
+  $("gate").hidden = false;
+  $("booting").hidden = !booting;
+  $("loginForm").hidden = !!booting;
+  $("gmsg").textContent = text || "";
+  $("loginBtn").disabled = false;
+}
+function showPanel() {
+  $("gate").hidden = true;
+  $("panel").hidden = false;
+  $("who").textContent = store.get(EM_KEY) || "";
+  if (!started) {
+    started = true;
+    setEditor({});
+    loadSources();
+    loadArticles();
+  }
+}
+// بعد الدخول: الخادم كيتأكد أن الحساب فـ admins
+async function verify() {
+  const { r, d } = await rawApi("GET", "/api/admin/me");
+  if (!r.ok) throw new Error(d.error || "ما قدرناش نتأكدو من الحساب");
+}
+
+$("eye").onclick = () => {
+  const p = $("gPwd");
+  p.type = p.type === "password" ? "text" : "password";
+};
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("gEmail").value.trim();
+  const pwd = $("gPwd").value;
+  if (!email || !pwd) { $("gmsg").textContent = "دخل البريد وكلمة المرور."; return; }
+  $("loginBtn").disabled = true;
+  $("gmsg").style.color = "var(--muted)";
+  $("gmsg").textContent = "كنتأكدو...";
+  try {
+    await signIn(email, pwd);
+    await verify();
+    $("gPwd").value = "";
+    $("gmsg").style.color = "";
+    showPanel();
+  } catch (err) {
+    clearSession();
+    $("gmsg").style.color = "";
+    showLogin(err.message);
+  }
+});
+$("logout").onclick = () => { clearSession(); showLogin(""); };
 
 let currentId = null;
 
@@ -307,9 +473,12 @@ async function loadArticles() {
   }
 }
 
-setEditor({});
-loadSources();
-loadArticles();
+(async () => {
+  if (!store.get(RT_KEY)) return showLogin("");
+  showLogin("", true);
+  try { await refresh(); await verify(); showPanel(); }
+  catch (e) { clearSession(); showLogin(e.message); }
+})();
 </script>
 </body>
 </html>

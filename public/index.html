@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>سياسات: السياسات العمومية بالدارجة</title>
+<meta name="description" content="موقع كيبسط السياسات العمومية والنصوص الرسمية بالدارجة المغربية، بالأرقام اللي فالوثيقة وبرابط المصدر الرسمي.">
+<meta property="og:type" content="website"><meta property="og:locale" content="ar_MA">
+<meta property="og:title" content="سياسات: السياسات العمومية بالدارجة">
+<meta property="og:description" content="النصوص الرسمية بدارجة مغربية بسيطة، مع رابط المصدر الرسمي.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%9C%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@600&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
@@ -70,13 +75,13 @@ footer{padding:28px 0 40px;color:var(--muted);font-size:15px}
 <body>
 <header>
   <div class="wrap">
-    <a class="logo" href="#">سياسات</a>
-    <nav><a href="#reports">التقارير</a><a href="#method">المنهجية</a></nav>
+    <a class="logo" href="/">سياسات</a>
+    <nav><a href="/#reports">التقارير</a><a href="/#method">المنهجية</a><a href="/about.html">من نحن</a></nav>
   </div>
 </header>
 <main id="app"></main>
 <footer>
-  <div class="wrap">هاد الموقع كيبسط النصوص الرسمية، والمرجع الأصلي هو دائما النص الرسمي. القراءة النقدية تحليل مبني على الأرقام، ماشي معلومة رسمية.</div>
+  <div class="wrap">هاد الموقع كيبسط النصوص الرسمية، والمرجع الأصلي هو دائما النص الرسمي. القراءة النقدية تحليل مبني على الأرقام، ماشي معلومة رسمية. <a href="/about.html">من نحن والخصوصية</a></div>
 </footer>
 
 <script>
@@ -172,7 +177,7 @@ async function loadList() {
     if (!list.length) { box.append(el("p", "مازال ما كاين حتى تقرير.", "msg")); return; }
     list.forEach((r) => {
       const a = el("a", null, "card");
-      a.href = "#" + r.id;
+      a.href = "/report/" + r.id;
       a.append(el("div", r.title, "t"), el("div", fmt(r.date), "d"));
       box.append(a);
     });
@@ -188,7 +193,7 @@ async function reportView(id) {
   sec.append(wrap);
   app.append(sec);
   const back = el("a", "← رجوع للتقارير", "back");
-  back.href = "#reports";
+  back.href = "/#reports";
   wrap.append(back);
   try {
     const res = await fetch("/api/reports/" + encodeURIComponent(id));
@@ -247,16 +252,19 @@ async function reportView(id) {
 }
 
 function route() {
-  const h = decodeURIComponent(location.hash.slice(1));
-  if (!h || h === "reports" || h === "method") {
-    document.title = "سياسات: السياسات العمومية بالدارجة";
-    if (!document.getElementById("list")) homeView();
-    if (h) setTimeout(() => document.getElementById(h)?.scrollIntoView(), 0);
-    else window.scrollTo(0, 0);
-  } else {
+  const m = /^\/report\/([^/]+)\/?$/.exec(location.pathname);
+  if (m) {
     window.scrollTo(0, 0);
-    reportView(h);
+    reportView(decodeURIComponent(m[1]));
+    return;
   }
+  const h = decodeURIComponent(location.hash.slice(1));
+  // روابط قديمة بصيغة #id: كنحولوها للرابط الحقيقي
+  if (h && h !== "reports" && h !== "method") { location.replace("/report/" + encodeURIComponent(h)); return; }
+  document.title = "سياسات: السياسات العمومية بالدارجة";
+  if (!document.getElementById("list")) homeView();
+  if (h) setTimeout(() => document.getElementById(h)?.scrollIntoView(), 0);
+  else window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);
 route();

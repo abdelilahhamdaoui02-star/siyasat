@@ -3,24 +3,27 @@
 موقع كيبسط السياسات العمومية بالدارجة المغربية.
 
 ## التشغيل (Windows / PowerShell)
-1. حل PowerShell فهاد المجلد.
+1. عمر `firebase-config.json` (شوف `DEPLOY.md`، الخطوات 1 لـ 4).
 2. `npm install`
-3. `$env:ADMIN_PASSWORD="كلمة_سر_طويلة_بحروف_لاتينية_وأرقام"`
-4. `node server.js`
+3. `node server.js`
 
 - الموقع العام: http://localhost:3000
-- الإدارة: http://localhost:3000/admin.html (اسم المستخدم: admin، وكلمة السر اللي حطيتي)
+- الإدارة: http://localhost:3000/admin.html (دخول بالبريد وكلمة المرور ديال حساب Firebase الأدمين)
 
-على Linux أو الاستضافة: متغيرات البيئة هي `ADMIN_PASSWORD` (إجباري)، `ADMIN_USER` (اختياري)، و`PORT` (اختياري).
+متغيرات البيئة (اختيارية): `PORT`، `ANTHROPIC_API_KEY`، `FIREBASE_API_KEY` و`FIREBASE_PROJECT_ID` (بدل firebase-config.json).
+
+## النشر على الأنترنت
+شوف `DEPLOY.md` (Google Cloud Run + Firestore). على Cloud Run الخادم كيستعمل Firestore أوتوماتيكيا، ومحليا كيستعمل ملفات `data/`.
 
 ## الملفات
 - `server.js`: الخادم (الأبواب العامة، الإدارة المحمية، الوسطاء، جلب الروابط).
 - `public/index.html`: الصفحة العامة (لائحة التقارير وعرض التقرير).
+- `public/about.html`: من نحن والخصوصية (عمر `[[ ]]`).
 - `public/siyasat-onepage.html`: نسخة الموقع فصفحة وحدة (ثابتة، بلا خادم).
-- `private/admin.html`: صفحة الإدارة. كتتخدم غير بكلمة السر.
+- `public/admin.html`: صفحة الإدارة (نموذج دخول Firebase + اللوحة، الأبواب محمية فالخادم).
+- `firebase-config.json`: إعداد Firebase للويب.
 - `data/`: التقارير والوسطاء كملفات JSON. دير منها نسخة احتياطية.
 
 ## ملاحظات
-- ما تنشرش الموقع بلا `ADMIN_PASSWORD`، وخاصو يكون على https.
 - ملفات `data/*.json` ما كتدخلش لـ Git (.gitignore).
 - الاستضافات اللي كتمسح الملفات ملي كتعاود التشغيل غادي تضيع ليك التقارير، فتأكد من هادشي قبل النشر.
