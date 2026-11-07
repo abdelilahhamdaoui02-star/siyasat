@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سياسات: السياسات العمومية بالدارجة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@600&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#12213f;--cobalt:#2457a6;--saffron:#e8a91a;--paper:#f5f7fa;--white:#fff;--rule:#d6dce6;--muted:#566075}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Tajawal,Tahoma,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px}
+a{color:var(--cobalt)}
+:focus-visible{outline:3px solid var(--saffron);outline-offset:2px}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+header{background:var(--white);border-top:6px solid var(--saffron);border-bottom:1px solid var(--rule)}
+header .wrap{display:flex;justify-content:space-between;align-items:center;padding-top:12px;padding-bottom:12px}
+.logo{font-family:"Reem Kufi",Tahoma,sans-serif;font-size:30px;color:var(--ink);text-decoration:none}
+nav a{margin-inline-start:22px;color:var(--ink);text-decoration:none;font-weight:500}
+nav a:hover{color:var(--cobalt)}
+h1,h2{font-family:"Reem Kufi",Tahoma,sans-serif;font-weight:600;margin:0}
+h1{font-size:clamp(32px,6vw,54px);line-height:1.4;margin-bottom:14px}
+h2{font-size:clamp(24px,4vw,32px);line-height:1.5;margin-bottom:6px}
+.hero{padding:48px 0 36px}
+.lead{max-width:60ch;color:var(--muted);margin:0 0 28px}
+.swap{display:grid;grid-template-columns:1fr 1fr;border-radius:14px;overflow:hidden;border:1px solid var(--rule)}
+.swap>div{padding:22px 26px}
+.swap small{display:block;font-weight:700;font-size:14px;margin-bottom:8px}
+.official{background:#e6ebf2;color:#4a5468;font-size:15px}
+.darija{background:var(--cobalt);color:#fff;font-size:21px;line-height:1.8}
+.darija small{color:var(--saffron)}
+.note{font-size:14px;color:var(--muted);margin:10px 0 24px}
+.btn{display:inline-block;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;padding:12px 26px;border-radius:10px}
+.btn:hover{background:var(--cobalt)}
+section{padding:36px 0}
+.meta{color:var(--muted);font-size:15px;margin:0 0 18px}
+.summary{max-width:70ch;margin:0 0 22px}
+.tabs{display:flex;gap:6px;border-bottom:2px solid var(--rule)}
+.tabs button{font:inherit;font-weight:700;background:none;border:0;padding:12px 18px;cursor:pointer;color:var(--muted);border-bottom:4px solid transparent;margin-bottom:-2px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--saffron)}
+.panel{background:var(--white);border:1px solid var(--rule);border-top:0;border-radius:0 0 14px 14px;padding:6px 26px 24px}
+.panel[hidden]{display:none}
+.panel h3{margin:22px 0 4px;color:var(--cobalt);font-size:19px}
+.panel ul{margin:0;padding-inline-start:22px}
+.panel li{margin:6px 0}
+.flag{background:#fff6dc;border-inline-start:5px solid var(--saffron);padding:12px 16px;margin:20px 0 6px;font-size:16px}
+.method{background:var(--white);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:20px}
+.rules div{border-top:4px solid var(--cobalt);padding-top:12px}
+.rules strong{display:block;margin-bottom:4px}
+footer{padding:28px 0 40px;color:var(--muted);font-size:15px}
+@media(max-width:700px){.swap,.rules{grid-template-columns:1fr}nav a{margin-inline-start:14px}.tabs button{padding:10px 10px;font-size:15px}.panel{padding:4px 16px 20px}}
+
+.reports{display:grid;gap:12px;margin-top:18px}
+.card{display:block;background:var(--white);border:1px solid var(--rule);border-inline-start:5px solid var(--saffron);border-radius:12px;padding:16px 22px;text-decoration:none;color:inherit}
+.card:hover{border-color:var(--cobalt);border-inline-start-color:var(--cobalt)}
+.card .t{font-weight:700;font-size:19px}
+.card .d{color:var(--muted);font-size:14px}
+.back{display:inline-block;margin:0 0 14px;font-weight:700;text-decoration:none}
+.panel h4{margin:14px 0 2px}
+.panel p{margin:8px 0}
+.panel hr{border:0;border-top:1px solid var(--rule);margin:16px 0}
+.single{border-top:1px solid var(--rule);border-radius:14px}
+.tail{margin-top:16px;color:var(--muted);font-size:15px}
+.msg{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="#">سياسات</a>
+    <nav><a href="#reports">التقارير</a><a href="#method">المنهجية</a></nav>
+  </div>
+</header>
+<main id="app"></main>
+<footer>
+  <div class="wrap">هاد الموقع كيبسط النصوص الرسمية، والمرجع الأصلي هو دائما النص الرسمي. القراءة النقدية تحليل مبني على الأرقام، ماشي معلومة رسمية.</div>
+</footer>
+
+<script>
+const app = document.getElementById("app");
+const el = (tag, text, cls) => {
+  const e = document.createElement(tag);
+  if (text) e.textContent = text;
+  if (cls) e.className = cls;
+  return e;
+};
+const fmt = (d) => new Date(d).toLocaleDateString("fr-FR");
+
+function inline(parent, text) {
+  text.split(/(\*\*[^*]+\*\*)/).forEach((part) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      parent.append(el("strong", part.slice(2, -2)));
+    } else if (part) {
+      parent.append(document.createTextNode(part));
+    }
+  });
+}
+
+function renderInto(box, text) {
+  let ul = null;
+  text.split("\n").forEach((raw) => {
+    const line = raw.trim();
+    if (line.startsWith("- ")) {
+      if (!ul) { ul = el("ul"); box.append(ul); }
+      const li = el("li");
+      inline(li, line.slice(2));
+      ul.append(li);
+      return;
+    }
+    ul = null;
+    if (!line) return;
+    if (line === "---") { box.append(el("hr")); return; }
+    let node;
+    if (line.startsWith("### ")) { node = el("h4"); inline(node, line.slice(4)); }
+    else if (line.startsWith("## ")) { node = el("h3"); inline(node, line.slice(3)); }
+    else if (line.startsWith("# ")) { node = el("h3"); inline(node, line.slice(2)); }
+    else { node = el("p"); inline(node, line); }
+    box.append(node);
+  });
+}
+
+// تقسيم التقرير: النص الرسمي | القراءة النقدية | المصدر
+function splitReport(text) {
+  const lines = text.split("\n");
+  const isHead = (l) => /^#{1,3}\s/.test(l.trim());
+  const ci = lines.findIndex((l) => isHead(l) && l.includes("قراءة نقدية"));
+  if (ci < 0) return { main: text, critical: "", tail: "" };
+  let ti = lines.findIndex((l, i) => i > ci && isHead(l) && l.includes("المصدر"));
+  if (ti < 0) ti = lines.length;
+  return {
+    main: lines.slice(0, ci).join("\n"),
+    critical: lines.slice(ci + 1, ti).join("\n"),
+    tail: lines.slice(ti).join("\n"),
+  };
+}
+
+function homeView() {
+  app.innerHTML = `
+<div class="wrap hero">
+  <h1>السياسة العمومية، بدارجة كنفهموها</h1>
+  <p class="lead">كنقراو النصوص الرسمية وكنشرحوها بدارجة مغربية بسيطة، بالأرقام اللي فالوثيقة وبرابط المصدر الرسمي، باش كل مواطن يعرف شنو كيتبدل ف حياتو.</p>
+  <div class="swap">
+    <div class="official"><small>النص الرسمي</small>رفع الدعم الاجتماعي المباشر من 500 إلى 600 درهم شهريا سنة 2027 كمرحلة أولى في أفق بلوغه 1.000 درهم، لفائدة أكثر من أربعة ملايين أسرة.</div>
+    <div class="darija"><small>بالدارجة</small>الدعم الاجتماعي المباشر غادي يزيد من 500 لـ 600 درهم فالشهر فـ 2027، والهدف يوصل 1.000 درهم. وكيستافدو منو أكثر من 4 ملايين أسرة.</div>
+  </div>
+  <p class="note">مثال من وثيقة «ميزانية المواطن 2027».</p>
+  <a class="btn" href="#reports">شوف التقارير</a>
+</div>
+<section id="reports"><div class="wrap">
+  <h2>آخر التقارير</h2>
+  <div class="reports" id="list"><p class="msg">كنجيبو التقارير...</p></div>
+</div></section>
+<section id="method" class="method"><div class="wrap">
+  <h2>كيفاش كنخدمو</h2>
+  <div class="rules">
+    <div><strong>الأرقام من الوثيقة وحدها</strong>ما كنزيدو حتى رقم من عندنا. وإلا ما لقيناش معلومة، كنقولو «الوثيقة ما كتذكرهاش».</div>
+    <div><strong>المصدر الرسمي دائما</strong>كل تقرير كيجي مع رابط النص الأصلي، باش تقدر تتأكد بنفسك.</div>
+    <div><strong>القراءة النقدية معلمة</strong>كتبنى على الأرقام فقط، بلا رأي سياسي، وكنوضحو أنها تحليل ماشي معلومة رسمية.</div>
+  </div>
+</div></section>`;
+  loadList();
+}
+
+async function loadList() {
+  const box = document.getElementById("list");
+  try {
+    const list = await (await fetch("/api/reports")).json();
+    box.replaceChildren();
+    if (!list.length) { box.append(el("p", "مازال ما كاين حتى تقرير.", "msg")); return; }
+    list.forEach((r) => {
+      const a = el("a", null, "card");
+      a.href = "#" + r.id;
+      a.append(el("div", r.title, "t"), el("div", fmt(r.date), "d"));
+      box.append(a);
+    });
+  } catch {
+    box.replaceChildren(el("p", "ما قدرناش نجيبو التقارير", "msg"));
+  }
+}
+
+async function reportView(id) {
+  app.replaceChildren();
+  const wrap = el("div", null, "wrap");
+  const sec = el("section");
+  sec.append(wrap);
+  app.append(sec);
+  const back = el("a", "← رجوع للتقارير", "back");
+  back.href = "#reports";
+  wrap.append(back);
+  try {
+    const res = await fetch("/api/reports/" + encodeURIComponent(id));
+    if (!res.ok) { wrap.append(el("p", "التقرير ما كاينش", "msg")); return; }
+    const r = await res.json();
+    document.title = r.title + " | سياسات";
+    wrap.append(el("h2", r.title));
+    const meta = el("p", fmt(r.date), "meta");
+    if (/^https?:\/\//.test(r.source)) {
+      const s = el("a", "المصدر الرسمي");
+      s.href = r.source; s.target = "_blank"; s.rel = "noopener";
+      meta.append(document.createTextNode(" · "), s);
+    }
+    wrap.append(meta);
+
+    const { main, critical, tail } = splitReport(r.content || "");
+    const p1 = el("div", null, "panel");
+    p1.id = "p1"; p1.setAttribute("role", "tabpanel"); p1.setAttribute("aria-labelledby", "t1");
+    renderInto(p1, main);
+
+    if (!critical.trim()) {
+      p1.classList.add("single");
+      wrap.append(p1);
+    } else {
+      const tabs = el("div", null, "tabs");
+      tabs.setAttribute("role", "tablist");
+      const t1 = el("button", "شنو كيقول النص الرسمي");
+      const t2 = el("button", "قراءة نقدية");
+      [[t1, "t1", "p1", true], [t2, "t2", "p2", false]].forEach(([b, i, c, on]) => {
+        b.id = i; b.setAttribute("role", "tab");
+        b.setAttribute("aria-controls", c); b.setAttribute("aria-selected", on);
+      });
+      tabs.append(t1, t2);
+      const p2 = el("div", null, "panel");
+      p2.id = "p2"; p2.hidden = true;
+      p2.setAttribute("role", "tabpanel"); p2.setAttribute("aria-labelledby", "t2");
+      const flag = el("p", null, "flag");
+      flag.append(el("strong", "تنبيه:"), document.createTextNode(" هادا تحليل ديال الموقع، ماشي معلومة رسمية. الاستنتاجات قراءتنا، وكتحتاج مصادر مستقلة."));
+      p2.append(flag);
+      renderInto(p2, critical);
+      [t1, t2].forEach((t) => t.addEventListener("click", () => {
+        [t1, t2].forEach((x) => x.setAttribute("aria-selected", x === t));
+        p1.hidden = t !== t1;
+        p2.hidden = t !== t2;
+      }));
+      wrap.append(tabs, p1, p2);
+    }
+    if (tail.trim()) {
+      const t = el("div", null, "tail");
+      renderInto(t, tail.split("\n").slice(1).join("\n"));
+      wrap.append(t);
+    }
+  } catch {
+    wrap.append(el("p", "ما قدرناش نجيبو التقرير", "msg"));
+  }
+}
+
+function route() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (!h || h === "reports" || h === "method") {
+    document.title = "سياسات: السياسات العمومية بالدارجة";
+    if (!document.getElementById("list")) homeView();
+    if (h) setTimeout(() => document.getElementById(h)?.scrollIntoView(), 0);
+    else window.scrollTo(0, 0);
+  } else {
+    window.scrollTo(0, 0);
+    reportView(h);
+  }
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>

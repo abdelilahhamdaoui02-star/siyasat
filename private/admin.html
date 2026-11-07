@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سياسات - الإدارة</title>
+<style>
+:root{--ink:#12213f;--cobalt:#2457a6;--ok:#2e7d32;--bad:#b3261e;--paper:#f5f7fa;--rule:#d6dce6;--muted:#566075}
+*{box-sizing:border-box}
+body{font-family:Tahoma,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.8;margin:0}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 70px}
+h1{margin:0}
+.sub{color:var(--muted);margin:0 0 12px}
+.warn{background:#fff6dc;border-inline-start:5px solid #e8a91a;padding:10px 14px;margin:12px 0 20px;font-size:15px}
+section{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:18px 20px;margin:18px 0}
+h2{margin:0 0 10px;font-size:20px}
+label{display:block;margin:12px 0 4px;font-weight:bold;font-size:15px}
+input,textarea{width:100%;padding:10px;font:inherit;border:1px solid #b9c1cf;border-radius:8px;background:#fff;color:inherit}
+textarea{min-height:260px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.row>*{flex:1;min-width:160px}
+.row>button{flex:0 0 auto}
+button{font:inherit;font-weight:bold;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;background:var(--cobalt);color:#fff}
+button.sec{background:#e6ebf2;color:var(--ink)}
+button.ok{background:var(--ok)}
+button.bad{background:var(--bad)}
+button.sm{padding:4px 12px;font-size:14px}
+button:disabled{opacity:.6;cursor:wait}
+:focus-visible{outline:3px solid #e8a91a;outline-offset:2px}
+ul{list-style:none;padding:0;margin:8px 0 0}
+li.item{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--rule);padding:10px 0}
+li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.badge{font-size:13px;padding:2px 10px;border-radius:99px;background:#e6ebf2;margin-inline-start:6px}
+.badge.pub{background:#d7efd9;color:#1b5e20}
+.muted{color:var(--muted);font-size:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#msg{position:sticky;bottom:12px;margin-top:16px;padding:10px 14px;border-radius:8px;display:none;font-weight:bold}
+#msg.ok{display:block;background:#d7efd9;color:#1b5e20}
+#msg.err{display:block;background:#fde0dd;color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>سياسات: الإدارة</h1>
+  <p class="sub">سجل الوسطاء، جيب الروابط، حول النص لتقرير، وانشرو.</p>
+  <div class="warn">هاد الصفحة محمية بكلمة سر (ADMIN_PASSWORD). ما تنشرش الموقع على الأنترنت بلا https وبلا كلمة سر قوية.</div>
+
+  <section>
+    <h2>1. الوسطاء (المواقع الرسمية)</h2>
+    <p class="muted">الخادم ما كيجيب غير من المواقع المسجلة هنا.</p>
+    <div class="row">
+      <div><label for="sName">الاسم</label><input id="sName" placeholder="وزارة الاقتصاد والمالية"></div>
+      <div><label for="sDomain">الدومين</label><input id="sDomain" placeholder="finances.gov.ma" dir="ltr"></div>
+      <button id="addSource">زيد الوسيط</button>
+    </div>
+    <ul id="sources"></ul>
+  </section>
+
+  <section>
+    <h2>2. جيب نص من رابط</h2>
+    <div class="row">
+      <div><label for="url">رابط الصفحة أو ملف PDF</label><input id="url" placeholder="https://..." dir="ltr"></div>
+      <button id="fetchBtn">جيب النص</button>
+    </div>
+    <p class="muted">النص المستخرج من ملفات PDF بالعربية ممكن يكون فيه حروف ناقصة. راجعو دائما.</p>
+  </section>
+
+  <section id="editor">
+    <h2>3. المحرر <span id="editing" class="badge"></span></h2>
+    <label for="title">العنوان</label>
+    <input id="title" placeholder="مثلا: ميزانية المواطن 2027">
+    <label for="source">رابط المصدر الرسمي</label>
+    <input id="source" placeholder="https://..." dir="ltr">
+    <label for="content">النص <span id="count" class="muted"></span></label>
+    <textarea id="content" placeholder="هنا كيبان النص المستخرج. من بعد حطو التقرير بالدارجة."></textarea>
+    <p class="muted">الشكل المدعوم: ## عنوان، ### عنوان صغير، - نقطة، **غليظ**، --- خط فاصل.</p>
+    <div id="promptBox" hidden><label for="prompt">انسخ هادشي ولصقو فمحادثة Claude</label><textarea id="prompt" readonly></textarea></div>
+    <div class="actions">
+      <button id="copyPrompt" class="sec">نسخ التعليمات والنص (لـ Claude)</button>
+      <button id="saveDraft">حفظ كمسودة</button>
+      <button id="publish" class="ok">نشر</button>
+      <button id="newBtn" class="sec">مقال جديد</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. المقالات</h2>
+    <ul id="articles"></ul>
+  </section>
+
+  <div id="msg" role="status"></div>
+</div>
+
+<script>
+const INSTRUCTIONS = `أنت كاتب تقارير لموقع "سياسات". مهمتك تبسيط النص الرسمي للمواطن المغربي العادي.
+
+اللغة: دارجة مغربية بسيطة وواضحة، بلا مصطلحات معقدة. إلا كان مصطلح تقني ضروري، شرحو بجملة قصيرة.
+
+الأرقام: استعمل غير الأرقام الموجودة فالنص. ما تزيدش أرقام ولا تخمن. إلا ما لقيتيش معلومة، قول "الوثيقة ما كتذكرهاش".
+
+الهيكل:
+1. العنوان
+2. باختصار (جوج جمل)
+3. علاش جات؟
+4. شنو كيتبدل؟
+5. شكون كيتأثر؟
+6. شنو كيقول النص الرسمي (الإيجابيات كما وردت)
+7. قراءة نقدية (نقط الضعف بالأرقام، وكل استنتاج ديالك كتوضح أنه تحليل ماشي معلومة رسمية)
+8. المصدر الرسمي
+
+ممنوع: إبداء رأي سياسي، أو مدح أو ذم أي جهة. القراءة النقدية كتبنى على الأرقام فقط.
+
+استعمل فالكتابة: ## للعناوين، ### للعناوين الصغيرة، - للنقط، **للكلمات الغليظة**، و--- للخط الفاصل.`;
+
+const $ = (id) => document.getElementById(id);
+function el(tag, text, cls) {
+  const e = document.createElement(tag);
+  if (text) e.textContent = text;
+  if (cls) e.className = cls;
+  return e;
+}
+const fmt = (d) => new Date(d).toLocaleDateString("fr-FR");
+
+const msg = $("msg");
+function say(t, ok = true) {
+  msg.textContent = t;
+  msg.className = ok ? "ok" : "err";
+  clearTimeout(say.t);
+  say.t = setTimeout(() => (msg.className = ""), 6000);
+}
+
+async function api(method, url, body) {
+  const r = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || "وقع خطأ");
+  return d;
+}
+
+let currentId = null;
+
+/* ---------- الوسطاء ---------- */
+async function loadSources() {
+  const ul = $("sources");
+  ul.replaceChildren();
+  try {
+    const list = await api("GET", "/api/admin/sources");
+    if (!list.length) {
+      ul.append(el("li", "مازال ما كاين حتى وسيط. زيد واحد، مثلا finances.gov.ma", "muted"));
+      return;
+    }
+    list.forEach((s) => {
+      const li = el("li", null, "item");
+      const info = el("div");
+      info.append(el("strong", s.name), document.createTextNode("  "), el("span", s.domain, "muted"));
+      const del = el("button", "حذف", "sm bad");
+      del.onclick = async () => {
+        if (!confirm("حذف هاد الوسيط؟")) return;
+        try { await api("DELETE", "/api/admin/sources/" + s.id); loadSources(); }
+        catch (e) { say(e.message, false); }
+      };
+      li.append(info, del);
+      ul.append(li);
+    });
+  } catch (e) {
+    say("ما قدرناش نتصلو بالخادم. واش node server.js خدام؟", false);
+  }
+}
+
+$("addSource").onclick = async () => {
+  try {
+    await api("POST", "/api/admin/sources", { name: $("sName").value, domain: $("sDomain").value });
+    $("sName").value = "";
+    $("sDomain").value = "";
+    await loadSources();
+    say("تزاد الوسيط ✅");
+  } catch (e) { say(e.message, false); }
+};
+
+/* ---------- المحرر ---------- */
+function count() {
+  $("count").textContent = "(" + $("content").value.length.toLocaleString("fr-FR") + " حرف)";
+}
+function setEditor(a) {
+  $("title").value = a.title || "";
+  $("source").value = a.source || "";
+  $("content").value = a.content || "";
+  $("editing").textContent = currentId ? "مقال محفوظ" : "مقال جديد";
+  $("editing").className = "badge" + (a.status === "published" ? " pub" : "");
+  $("promptBox").hidden = true;
+  count();
+}
+$("content").addEventListener("input", count);
+
+$("fetchBtn").onclick = async () => {
+  const b = $("fetchBtn");
+  b.disabled = true;
+  b.textContent = "كنجيبو...";
+  try {
+    const d = await api("POST", "/api/admin/fetch", { url: $("url").value });
+    currentId = null;
+    setEditor({ title: d.title, source: d.source, content: d.text });
+    say("تجاب النص من " + d.sourceName + " ✅ راجعو قبل ما تكمل");
+    $("editor").scrollIntoView({ behavior: "smooth" });
+  } catch (e) { say(e.message, false); }
+  b.disabled = false;
+  b.textContent = "جيب النص";
+};
+
+$("copyPrompt").onclick = async () => {
+  const p = INSTRUCTIONS + "\n\nرابط المصدر: " + ($("source").value || "غير محدد") + "\n\nالنص الرسمي:\n" + $("content").value;
+  try {
+    await navigator.clipboard.writeText(p);
+    say("تنسخات التعليمات والنص ✅ لصقها فمحادثة Claude");
+  } catch {
+    $("prompt").value = p;
+    $("promptBox").hidden = false;
+    $("prompt").select();
+    say("انسخ النص من المربع اللي ظهر لتحت", false);
+  }
+};
+
+async function saveArticle(status) {
+  const body = { title: $("title").value, source: $("source").value, content: $("content").value, status };
+  try {
+    if (currentId) {
+      await api("PUT", "/api/admin/articles/" + currentId, body);
+    } else {
+      const d = await api("POST", "/api/admin/articles", body);
+      currentId = d.id;
+    }
+    setEditor(body);
+    say(status === "published" ? "تنشر المقال ✅" : "تحفظات المسودة ✅");
+    loadArticles();
+  } catch (e) { say(e.message, false); }
+}
+$("saveDraft").onclick = () => saveArticle("draft");
+$("publish").onclick = () => saveArticle("published");
+$("newBtn").onclick = () => { currentId = null; setEditor({}); };
+
+/* ---------- المقالات ---------- */
+async function loadArticles() {
+  const ul = $("articles");
+  ul.replaceChildren();
+  try {
+    const list = await api("GET", "/api/admin/articles");
+    if (!list.length) {
+      ul.append(el("li", "مازال ما كاين حتى مقال.", "muted"));
+      return;
+    }
+    list.forEach((a) => {
+      const pub = a.status === "published";
+      const li = el("li", null, "item");
+      const info = el("div");
+      info.append(
+        el("strong", a.title),
+        el("span", pub ? "منشور" : "مسودة", "badge" + (pub ? " pub" : "")),
+        el("div", fmt(a.date), "muted")
+      );
+      const btns = el("div", null, "btns");
+
+      const edit = el("button", "تعديل", "sm");
+      edit.onclick = async () => {
+        try {
+          const full = await api("GET", "/api/admin/articles/" + a.id);
+          currentId = full.id;
+          setEditor(full);
+          $("editor").scrollIntoView({ behavior: "smooth" });
+        } catch (e) { say(e.message, false); }
+      };
+
+      const toggle = el("button", pub ? "إلغاء النشر" : "نشر", "sm " + (pub ? "sec" : "ok"));
+      toggle.onclick = async () => {
+        try {
+          await api("PUT", "/api/admin/articles/" + a.id, { status: pub ? "draft" : "published" });
+          say(pub ? "رجع مسودة ✅" : "تنشر المقال ✅");
+          loadArticles();
+        } catch (e) { say(e.message, false); }
+      };
+
+      const del = el("button", "حذف", "sm bad");
+      del.onclick = async () => {
+        if (!confirm("حذف هاد المقال نهائيا؟")) return;
+        try {
+          await api("DELETE", "/api/admin/articles/" + a.id);
+          if (currentId === a.id) { currentId = null; setEditor({}); }
+          loadArticles();
+        } catch (e) { say(e.message, false); }
+      };
+
+      btns.append(edit, toggle, del);
+      if (pub) {
+        const view = el("a", "شوف", "muted");
+        view.href = "/#" + a.id;
+        view.target = "_blank";
+        view.rel = "noopener";
+        btns.append(view);
+      }
+      li.append(info, btns);
+      ul.append(li);
+    });
+  } catch (e) {
+    say("ما قدرناش نجيبو المقالات", false);
+  }
+}
+
+setEditor({});
+loadSources();
+loadArticles();
+</script>
+</body>
+</html>
