@@ -73,15 +73,16 @@ li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
     </div>
     <div><span id="who" class="muted" dir="ltr"></span> <button id="logout" class="sec sm">خروج</button></div>
   </div>
-<section>
+
+  <section>
     <h2>1. جيب نص من رابط</h2>
     <div class="row">
-      <div><label for="url">رابط صفحة رسمية (gov.ma)</label><input id="url" placeholder="https://..." dir="ltr"></div>
+      <div><label for="url">رابط صفحة أو ملف (PDF / Word / صورة)</label><input id="url" placeholder="https://..." dir="ltr"></div>
       <button id="fetchBtn">جيب النص</button>
     </div>
-    <p class="muted">كيخدم بصفحات HTML من مواقع gov.ma. ملفات PDF: افتحها وانسخ النص.</p>
+    <p class="muted">كيفتح أي رابط عمومي: صفحات HTML، ملفات PDF وWord، وصور (استخراج النص بالعربية عبر Google). الملفات كتاخد شوية ديال الوقت. راجع النص دائما.</p>
   </section>
-  
+
   <section id="editor">
     <h2>2. المحرر <span id="editing" class="badge"></span></h2>
     <label for="title">العنوان</label>
@@ -103,6 +104,14 @@ li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   <section>
     <h2>3. المقالات</h2>
     <ul id="articles"></ul>
+  </section>
+
+  <section>
+    <h2>⚙️ الإعدادات</h2>
+    <label for="proxyUrl">عنوان وسيط الجلب (Google Apps Script، ينتهي بـ /exec)</label>
+    <input id="proxyUrl" placeholder="https://script.google.com/macros/s/.../exec" dir="ltr">
+    <p class="muted">كيتحفظ فـ Firestore (للأدمين فقط). إلا خليتيه خاوي، كيتستعمل اللي فـ firebase-config.js.</p>
+    <div class="actions"><button id="saveSettings">حفظ الإعدادات 💾</button></div>
   </section>
 
   <div id="msg" role="status"></div>
@@ -276,6 +285,7 @@ function showPanel() {
   if (!started) {
     started = true;
     setEditor({});
+    loadSettings();
     loadArticles();
   }
 }
@@ -338,6 +348,36 @@ function setEditor(a) {
   count();
 }
 $("content").addEventListener("input", count);
+
+/* ---------- الإعدادات (كتتخزن فـ Firestore) ---------- */
+let SETTINGS = {};
+const proxyUrl = () => (SETTINGS.fetchProxy || CFG.fetchProxy || "").trim();
+async function loadSettings() {
+  try {
+    const d = await fs("GET", "/siyasat_settings/main");
+    SETTINGS = dec(d);
+  } catch { SETTINGS = {}; }
+  $("proxyUrl").value = SETTINGS.fetchProxy || "";
+  $("proxyUrl").placeholder = CFG.fetchProxy || "https://script.google.com/macros/s/.../exec";
+}
+$("saveSettings").onclick = async () => {
+  const v = $("proxyUrl").value.trim();
+  if (v && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(v)) {
+    return say("العنوان خاصو يبدا بـ https://script.google.com/macros/s/ وينتهي بـ /exec", false);
+  }
+  try {
+    await fs("PATCH", "/siyasat_settings/main", { fields: { fetchProxy: S(v) } }, "&updateMask.fieldPaths=fetchProxy");
+    SETTINGS.fetchProxy = v;
+    say("تحفظات الإعدادات ✅");
+  } catch (e) { say(e.message, false); }
+};
+
+function guessTitle(text, url) {
+  const first = (text.split("\n").find((l) => l.trim().length > 3) || "").trim();
+  if (first) return first.slice(0, 120);
+  try { return decodeURIComponent(url.split("/").pop().split("?")[0]) || url; } catch { return url; }
+}
+
 /* ---------- جلب نص من رابط (عبر وسيط Google Apps Script) ---------- */
 function extractText(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
@@ -355,10 +395,10 @@ function extractText(html) {
 
 $("fetchBtn").onclick = async () => {
   const b = $("fetchBtn");
-  const proxy = CFG.fetchProxy;
+  const proxy = proxyUrl();
   const url = $("url").value.trim();
-  if (!proxy) return say("وسيط الجلب ما مضبوطش فـ firebase-config.js", false);
-  if (!/^https:\/\//i.test(url)) return say("دخل رابط كيبدا بـ https://", false);
+  if (!proxy) return say("وسيط الجلب ما مضبوطش. دخلو فالإعدادات (تحت).", false);
+  if (!/^https?:\/\//i.test(url)) return say("دخل رابط كيبدا بـ http:// أو https://", false);
   b.disabled = true;
   b.textContent = "كنجيبو...";
   try {
@@ -370,10 +410,18 @@ $("fetchBtn").onclick = async () => {
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    const x = extractText(d.body);
-    if (x.text.length < 50) throw new Error("ما لقيناش نص فهاد الصفحة");
+    let title, text;
+    if (d.kind === "text") {
+      text = (d.body || "").trim();
+      title = guessTitle(text, url);
+    } else {
+      const x = extractText(d.body);
+      title = x.title;
+      text = x.text;
+    }
+    if (text.length < 50) throw new Error("ما لقيناش نص فهاد الرابط");
     currentId = null;
-    setEditor({ title: x.title, source: url, content: x.text });
+    setEditor({ title, source: url, content: text });
     say("تجاب النص ✅ راجعو قبل ما تكمل");
     $("editor").scrollIntoView({ behavior: "smooth" });
   } catch (e) {
@@ -382,6 +430,7 @@ $("fetchBtn").onclick = async () => {
   b.disabled = false;
   b.textContent = "جيب النص";
 };
+
 $("copyPrompt").onclick = async () => {
   const p = INSTRUCTIONS + "\n\nرابط المصدر: " + ($("source").value || "غير محدد") + "\n\nالنص الرسمي:\n" + $("content").value;
   try {
