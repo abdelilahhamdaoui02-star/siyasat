@@ -32,6 +32,7 @@ li.item{display:flex;gap:10px;align-items:center;justify-content:space-between;f
 li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .badge{font-size:13px;padding:2px 10px;border-radius:99px;background:#e6ebf2;margin-inline-start:6px}
 .badge.pub{background:#d7efd9;color:#1b5e20}
+.badge.auto{background:#e3ecfb;color:#1d4a91}
 .muted{color:var(--muted);font-size:14px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .gate{max-width:420px;margin:60px auto;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:26px}
@@ -103,7 +104,21 @@ li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 
   <section>
     <h2>3. المقالات</h2>
+    <p class="muted">المقالات اللي عليها علامة "تلقائي" ولدها السكريبت كمسودات. راجعها قبل النشر، الأرقام خاصها تتأكد.</p>
     <ul id="articles"></ul>
+  </section>
+
+  <section>
+    <h2>4. المصادر المراقَبة (أتوماتيكي)</h2>
+    <p class="muted">السكريبت كيدور عليها كل 6 ساعات، وكيجيب التقارير الجديدة وكيحولها لمسودات بالدارجة.</p>
+    <div class="row">
+      <div><label for="srcName">الاسم</label><input id="srcName" placeholder="مثلا: المندوبية السامية للتخطيط"></div>
+      <div><label for="srcUrl">رابط صفحة المنشورات</label><input id="srcUrl" placeholder="https://..." dir="ltr"></div>
+      <button id="addSource">زيد المصدر</button>
+    </div>
+    <ul id="sources"></ul>
+    <div class="actions"><button id="runNow" class="sec">شغّل المراقبة دابا</button></div>
+    <p class="muted">كتاخد دقايق (حتى 5). ما تسدش الصفحة حتى تسالي.</p>
   </section>
 
   <section>
@@ -146,7 +161,7 @@ function el(tag, text, cls) {
   if (cls) e.className = cls;
   return e;
 }
-const fmt = (d) => new Date(d).toLocaleDateString("fr-FR");
+const fmt = (d) => (d ? new Date(d).toLocaleDateString("fr-FR") : "");
 const msg = $("msg");
 function say(t, ok = true) {
   msg.textContent = t;
@@ -229,7 +244,10 @@ const DB = "https://firestore.googleapis.com/v1/projects/" + CFG.projectId + "/d
 const S = (v) => ({ stringValue: String(v ?? "") });
 const dec = (d) => {
   const o = { id: d.name.split("/").pop() };
-  for (const k in d.fields || {}) o[k] = d.fields[k].stringValue ?? "";
+  for (const k in d.fields || {}) {
+    const f = d.fields[k];
+    o[k] = f.stringValue !== undefined ? f.stringValue : f.booleanValue !== undefined ? f.booleanValue : "";
+  }
   return o;
 };
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -287,6 +305,7 @@ function showPanel() {
     setEditor({});
     loadSettings();
     loadArticles();
+    loadSources();
   }
 }
 $("eye").onclick = () => {
@@ -473,7 +492,7 @@ async function loadArticles() {
   const ul = $("articles");
   ul.replaceChildren();
   try {
-    const d = await fs("GET", "/siyasat_reports", null, "&pageSize=300&mask.fieldPaths=title&mask.fieldPaths=status&mask.fieldPaths=date");
+    const d = await fs("GET", "/siyasat_reports", null, "&pageSize=300&mask.fieldPaths=title&mask.fieldPaths=status&mask.fieldPaths=date&mask.fieldPaths=auto");
     const list = (d.documents || []).map(dec).sort((a, b) => (a.date < b.date ? 1 : -1));
     if (!list.length) {
       ul.append(el("li", "مازال ما كاين حتى مقال.", "muted"));
@@ -485,9 +504,10 @@ async function loadArticles() {
       const info = el("div");
       info.append(
         el("strong", a.title),
-        el("span", pub ? "منشور" : "مسودة", "badge" + (pub ? " pub" : "")),
-        el("div", fmt(a.date), "muted")
+        el("span", pub ? "منشور" : "مسودة", "badge" + (pub ? " pub" : ""))
       );
+      if (a.auto === "1") info.append(el("span", "تلقائي", "badge auto"));
+      info.append(el("div", fmt(a.date), "muted"));
       const btns = el("div", null, "btns");
 
       const edit = el("button", "تعديل", "sm");
@@ -534,6 +554,98 @@ async function loadArticles() {
     say("ما قدرناش نجيبو المقالات: " + e.message, false);
   }
 }
+
+/* ---------- المصادر المراقَبة ---------- */
+async function loadSources() {
+  const ul = $("sources");
+  ul.replaceChildren();
+  try {
+    const d = await fs("GET", "/siyasat_sources", null, "&pageSize=100");
+    const list = (d.documents || []).map(dec);
+    if (!list.length) {
+      ul.append(el("li", "مازال ما زدتي حتى مصدر.", "muted"));
+      return;
+    }
+    list.forEach((s) => {
+      const on = s.enabled !== "0" && s.enabled !== false;
+      const li = el("li", null, "item");
+      const info = el("div");
+      info.append(
+        el("strong", s.name || s.url),
+        el("span", on ? "مفعّل" : "موقوف", "badge" + (on ? " pub" : ""))
+      );
+      const u = el("div", s.url, "muted");
+      u.dir = "ltr";
+      info.append(u);
+      const st = [];
+      if (s.lastCheck) st.push("آخر مراقبة: " + fmt(s.lastCheck));
+      if (s.lastError) st.push("⚠ " + s.lastError);
+      if (st.length) info.append(el("div", st.join(" — "), "muted"));
+
+      const btns = el("div", null, "btns");
+      const tg = el("button", on ? "إيقاف" : "تفعيل", "sm " + (on ? "sec" : "ok"));
+      tg.onclick = async () => {
+        try {
+          await fs("PATCH", "/siyasat_sources/" + s.id, { fields: { enabled: S(on ? "0" : "1") } }, "&updateMask.fieldPaths=enabled");
+          loadSources();
+        } catch (e) { say(e.message, false); }
+      };
+      const del = el("button", "حذف", "sm bad");
+      del.onclick = async () => {
+        if (!confirm("حذف هاد المصدر؟")) return;
+        try {
+          await fs("DELETE", "/siyasat_sources/" + s.id);
+          loadSources();
+        } catch (e) { say(e.message, false); }
+      };
+      btns.append(tg, del);
+      li.append(info, btns);
+      ul.append(li);
+    });
+  } catch (e) {
+    say("ما قدرناش نجيبو المصادر: " + e.message, false);
+  }
+}
+
+$("addSource").onclick = async () => {
+  const name = $("srcName").value.trim();
+  const url = $("srcUrl").value.trim();
+  if (!/^https?:\/\//i.test(url)) return say("دخل رابط كيبدا بـ http:// أو https://", false);
+  try {
+    await fs("POST", "/siyasat_sources", {
+      fields: { name: S(name || url), url: S(url), enabled: S("1") },
+    }, "&documentId=" + newId());
+    $("srcName").value = "";
+    $("srcUrl").value = "";
+    say("تزاد المصدر ✅");
+    loadSources();
+  } catch (e) { say(e.message, false); }
+};
+
+$("runNow").onclick = async () => {
+  const b = $("runNow");
+  const proxy = proxyUrl();
+  if (!proxy) return say("وسيط الجلب ما مضبوطش. دخلو فالإعدادات.", false);
+  b.disabled = true;
+  b.textContent = "كنراقبو... (ما تسدش الصفحة)";
+  try {
+    const t = await token();
+    const r = await fetch(proxy, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ token: t, action: "runNow" }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    say("سالات المراقبة ✅ مسودات جديدة: " + (d.done || 0));
+    loadArticles();
+    loadSources();
+  } catch (e) {
+    say("فشلات المراقبة: " + e.message, false);
+  }
+  b.disabled = false;
+  b.textContent = "شغّل المراقبة دابا";
+};
 
 (async () => {
   if (!store.get(RT_KEY)) return showLogin("");
