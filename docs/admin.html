@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سياسات - الإدارة</title>
+<style>
+:root{--ink:#12213f;--cobalt:#2457a6;--ok:#2e7d32;--bad:#b3261e;--paper:#f5f7fa;--rule:#d6dce6;--muted:#566075}
+*{box-sizing:border-box}
+body{font-family:Tahoma,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.8;margin:0}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 70px}
+h1{margin:0}
+.sub{color:var(--muted);margin:0 0 12px}
+.warn{background:#fff6dc;border-inline-start:5px solid #e8a91a;padding:10px 14px;margin:12px 0 20px;font-size:15px}
+section{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:18px 20px;margin:18px 0}
+h2{margin:0 0 10px;font-size:20px}
+label{display:block;margin:12px 0 4px;font-weight:bold;font-size:15px}
+input,textarea{width:100%;padding:10px;font:inherit;border:1px solid #b9c1cf;border-radius:8px;background:#fff;color:inherit}
+textarea{min-height:260px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.row>*{flex:1;min-width:160px}
+.row>button{flex:0 0 auto}
+button{font:inherit;font-weight:bold;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;background:var(--cobalt);color:#fff}
+button.sec{background:#e6ebf2;color:var(--ink)}
+button.ok{background:var(--ok)}
+button.bad{background:var(--bad)}
+button.sm{padding:4px 12px;font-size:14px}
+button:disabled{opacity:.6;cursor:wait}
+:focus-visible{outline:3px solid #e8a91a;outline-offset:2px}
+ul{list-style:none;padding:0;margin:8px 0 0}
+li.item{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--rule);padding:10px 0}
+li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.badge{font-size:13px;padding:2px 10px;border-radius:99px;background:#e6ebf2;margin-inline-start:6px}
+.badge.pub{background:#d7efd9;color:#1b5e20}
+.muted{color:var(--muted);font-size:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.gate{max-width:420px;margin:60px auto;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:26px}
+.gate h1{font-size:24px;text-align:center}
+.gate .sub{text-align:center;margin-bottom:6px}
+.pw{position:relative}
+.pw input{padding-right:56px}
+.pw button{position:absolute;right:6px;left:auto;top:50%;transform:translateY(-50%);padding:4px 10px;background:#e6ebf2;color:var(--ink)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#gmsg{margin-top:12px;font-weight:bold;color:var(--bad);min-height:1.5em}
+[hidden]{display:none!important}
+#msg{position:sticky;bottom:12px;margin-top:16px;padding:10px 14px;border-radius:8px;display:none;font-weight:bold}
+#msg.ok{display:block;background:#d7efd9;color:#1b5e20}
+#msg.err{display:block;background:#fde0dd;color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="gate" id="gate" hidden>
+  <h1>سياسات: الإدارة</h1>
+  <p class="sub">سجل الدخول بحساب الأدمين</p>
+  <div id="booting" class="muted" hidden>كنرجعو الجلسة...</div>
+  <form id="loginForm">
+    <label for="gEmail">البريد</label>
+    <input id="gEmail" type="text" dir="ltr" autocomplete="username" placeholder="admin@example.com">
+    <label for="gPwd">كلمة المرور</label>
+    <div class="pw"><input id="gPwd" type="password" dir="ltr" autocomplete="off"><button type="button" id="eye" aria-label="إظهار كلمة المرور">👁</button></div>
+    <div class="actions"><button type="submit" id="loginBtn" style="width:100%">دخول</button></div>
+    <div id="gmsg" role="alert"></div>
+    <p><a href="#" id="forgot">نسيت كلمة المرور؟ صيفط ليا رابط التغيير فالبريد</a></p>
+    <p class="muted">حساب الأدمين كيتخلق مرة وحدة من Firebase Console (شوف DEPLOY.md).</p>
+  </form>
+</div>
+
+<div class="wrap" id="panel" hidden>
+  <div class="top">
+    <div>
+      <h1>سياسات: الإدارة</h1>
+      <p class="sub">اكتب أو الصق النص الرسمي، حولو لتقرير بالدارجة، وانشرو.</p>
+    </div>
+    <div><span id="who" class="muted" dir="ltr"></span> <button id="logout" class="sec sm">خروج</button></div>
+  </div>
+
+  <section id="editor">
+    <h2>1. المحرر <span id="editing" class="badge"></span></h2>
+    <label for="title">العنوان</label>
+    <input id="title" placeholder="مثلا: ميزانية المواطن 2027">
+    <label for="source">رابط المصدر الرسمي</label>
+    <input id="source" placeholder="https://..." dir="ltr">
+    <label for="content">النص <span id="count" class="muted"></span></label>
+    <textarea id="content" placeholder="هنا كيبان النص المستخرج. من بعد حطو التقرير بالدارجة."></textarea>
+    <p class="muted">الشكل المدعوم: ## عنوان، ### عنوان صغير، - نقطة، **غليظ**، --- خط فاصل.</p>
+    <div id="promptBox" hidden><label for="prompt">انسخ هادشي ولصقو فمحادثة Claude</label><textarea id="prompt" readonly></textarea></div>
+    <div class="actions">
+      <button id="copyPrompt" class="sec">نسخ التعليمات والنص (لـ Claude)</button>
+      <button id="saveDraft">حفظ كمسودة</button>
+      <button id="publish" class="ok">نشر</button>
+      <button id="newBtn" class="sec">مقال جديد</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. المقالات</h2>
+    <ul id="articles"></ul>
+  </section>
+
+  <div id="msg" role="status"></div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script>
+const INSTRUCTIONS = `أنت كاتب تقارير لموقع "سياسات". مهمتك تبسيط النص الرسمي للمواطن المغربي العادي.
+
+اللغة: دارجة مغربية بسيطة وواضحة، بلا مصطلحات معقدة. إلا كان مصطلح تقني ضروري، شرحو بجملة قصيرة.
+
+الأرقام: استعمل غير الأرقام الموجودة فالنص. ما تزيدش أرقام ولا تخمن. إلا ما لقيتيش معلومة، قول "الوثيقة ما كتذكرهاش".
+
+الهيكل:
+1. العنوان
+2. باختصار (جوج جمل)
+3. علاش جات؟
+4. شنو كيتبدل؟
+5. شكون كيتأثر؟
+6. شنو كيقول النص الرسمي (الإيجابيات كما وردت)
+7. قراءة نقدية (نقط الضعف بالأرقام، وكل استنتاج ديالك كتوضح أنه تحليل ماشي معلومة رسمية)
+8. المصدر الرسمي
+
+ممنوع: إبداء رأي سياسي، أو مدح أو ذم أي جهة. القراءة النقدية كتبنى على الأرقام فقط.
+
+استعمل فالكتابة: ## للعناوين، ### للعناوين الصغيرة، - للنقط، **للكلمات الغليظة**، و--- للخط الفاصل.`;
+
+const $ = (id) => document.getElementById(id);
+function el(tag, text, cls) {
+  const e = document.createElement(tag);
+  if (text) e.textContent = text;
+  if (cls) e.className = cls;
+  return e;
+}
+const fmt = (d) => new Date(d).toLocaleDateString("fr-FR");
+const msg = $("msg");
+function say(t, ok = true) {
+  msg.textContent = t;
+  msg.className = ok ? "ok" : "err";
+  clearTimeout(say.t);
+  say.t = setTimeout(() => (msg.className = ""), 6000);
+}
+
+/* ---------- الدخول عبر Firebase (REST) ---------- */
+const CFG = window.FIREBASE_CONFIG;
+const RT_KEY = "siyasat:admin:rt";
+const EM_KEY = "siyasat:admin:email";
+const store = {
+  get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { sessionStorage.setItem(k, v); } catch {} },
+  remove: (k) => { try { sessionStorage.removeItem(k); } catch {} },
+};
+let session = { idToken: null, exp: 0 };
+const AUTH_ERR = {
+  INVALID_LOGIN_CREDENTIALS: "البريد أو كلمة المرور غير صحيحة.",
+  EMAIL_NOT_FOUND: "البريد غير موجود.",
+  INVALID_PASSWORD: "كلمة المرور غير صحيحة.",
+  INVALID_EMAIL: "البريد غير صالح.",
+  USER_DISABLED: "الحساب معطّل.",
+  TOO_MANY_ATTEMPTS_TRY_LATER: "محاولات كثيرة، عاود من بعد شوية.",
+  OPERATION_NOT_ALLOWED: "الدخول بالبريد وكلمة المرور ما مفعّلش فـ Firebase Authentication.",
+};
+function setSession(d) {
+  session = {
+    idToken: d.idToken || d.id_token,
+    exp: Date.now() + (parseInt(d.expiresIn || d.expires_in || "3600", 10) - 60) * 1000,
+  };
+  store.set(RT_KEY, d.refreshToken || d.refresh_token);
+}
+async function signIn(email, pwd) {
+  const r = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + encodeURIComponent(CFG.apiKey), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password: pwd, returnSecureToken: true }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const code = String((d.error && d.error.message) || "").split(" ")[0].split(":")[0];
+    throw new Error(AUTH_ERR[code] || "فشل الدخول" + (code ? " (" + code + ")" : ""));
+  }
+  setSession(d);
+  store.set(EM_KEY, email);
+}
+async function refresh() {
+  const rt = store.get(RT_KEY);
+  if (!rt) throw new Error("انتهت الجلسة، سجل الدخول من جديد.");
+  const r = await fetch("https://securetoken.googleapis.com/v1/token?key=" + encodeURIComponent(CFG.apiKey), {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(rt),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error("انتهت الجلسة، سجل الدخول من جديد.");
+  setSession(d);
+}
+async function token() {
+  if (!session.idToken || Date.now() > session.exp) await refresh();
+  return session.idToken;
+}
+function clearSession() {
+  session = { idToken: null, exp: 0 };
+  store.remove(RT_KEY);
+  store.remove(EM_KEY);
+}
+function uidFromToken(tok) {
+  try {
+    const b = tok.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const p = JSON.parse(atob(b));
+    return p.user_id || p.sub || null;
+  } catch { return null; }
+}
+
+/* ---------- Firestore (REST) ---------- */
+const DB = "https://firestore.googleapis.com/v1/projects/" + CFG.projectId + "/databases/(default)/documents";
+const S = (v) => ({ stringValue: String(v ?? "") });
+const dec = (d) => {
+  const o = { id: d.name.split("/").pop() };
+  for (const k in d.fields || {}) o[k] = d.fields[k].stringValue ?? "";
+  return o;
+};
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+
+async function fsRaw(method, path, body, qs) {
+  const t = await token();
+  const r = await fetch(DB + path + "?key=" + encodeURIComponent(CFG.apiKey) + (qs || ""), {
+    method,
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + t },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const d = await r.json().catch(() => ({}));
+  return { r, d };
+}
+async function fs(method, path, body, qs) {
+  let res;
+  try { res = await fsRaw(method, path, body, qs); }
+  catch (e) { showLogin(e.message); throw e; }
+  if (res.r.status === 401) {
+    clearSession();
+    showLogin("انتهت الجلسة، سجل الدخول من جديد.");
+    throw new Error("انتهت الجلسة");
+  }
+  if (res.r.status === 403) throw new Error("Firestore منع العملية. تأكد من القواعد (README) ومن حساب الأدمين.");
+  if (!res.r.ok) throw new Error((res.d.error && res.d.error.message) || "وقع خطأ " + res.r.status);
+  return res.d;
+}
+// التأكد أن الحساب أدمين: وثيقة admins/{uid}
+async function verify() {
+  const uid = uidFromToken(await token());
+  if (!uid) throw new Error("جلسة غير صالحة.");
+  const { r } = await fsRaw("GET", "/admins/" + encodeURIComponent(uid));
+  if (r.status === 404) throw new Error("هاد الحساب ماشي أدمين. UID: " + uid + ". زيد وثيقة فمجموعة admins سميتها هاد المعرّف.");
+  if (r.status === 403) throw new Error("قواعد Firestore كتمنع قراءة admins/" + uid + ". حدّث القواعد (README).");
+  if (!r.ok) throw new Error("Firestore رجع خطأ " + r.status);
+}
+
+/* ---------- الواجهة: دخول / لوحة ---------- */
+let started = false;
+let currentId = null;
+function showLogin(text, booting) {
+  $("panel").hidden = true;
+  $("gate").hidden = false;
+  $("booting").hidden = !booting;
+  $("loginForm").hidden = !!booting;
+  $("gmsg").textContent = text || "";
+  $("loginBtn").disabled = false;
+}
+function showPanel() {
+  $("gate").hidden = true;
+  $("panel").hidden = false;
+  $("who").textContent = store.get(EM_KEY) || "";
+  if (!started) {
+    started = true;
+    setEditor({});
+    loadArticles();
+  }
+}
+$("eye").onclick = () => {
+  const p = $("gPwd");
+  p.type = p.type === "password" ? "text" : "password";
+};
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("gEmail").value.trim();
+  const pwd = $("gPwd").value;
+  if (!email || !pwd) { $("gmsg").textContent = "دخل البريد وكلمة المرور."; return; }
+  $("loginBtn").disabled = true;
+  $("gmsg").style.color = "var(--muted)";
+  $("gmsg").textContent = "كنتأكدو...";
+  try {
+    await signIn(email, pwd);
+    await verify();
+    $("gPwd").value = "";
+    $("gmsg").style.color = "";
+    showPanel();
+  } catch (err) {
+    clearSession();
+    $("gmsg").style.color = "";
+    showLogin(err.message);
+  }
+});
+$("forgot").onclick = async (e) => {
+  e.preventDefault();
+  const email = $("gEmail").value.trim();
+  if (!email) { $("gmsg").style.color = ""; $("gmsg").textContent = "دخل البريد أولا."; return; }
+  try {
+    const r = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=" + encodeURIComponent(CFG.apiKey), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestType: "PASSWORD_RESET", email }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d.error && d.error.message) || "فشل الإرسال");
+    $("gmsg").style.color = "var(--ok)";
+    $("gmsg").textContent = "تصيفط رابط التغيير لـ " + email + " (شوف حتى Spam).";
+  } catch (err) {
+    $("gmsg").style.color = "";
+    $("gmsg").textContent = err.message;
+  }
+};
+$("logout").onclick = () => { clearSession(); showLogin(""); };
+
+/* ---------- المحرر ---------- */
+function count() {
+  $("count").textContent = "(" + $("content").value.length.toLocaleString("fr-FR") + " حرف)";
+}
+function setEditor(a) {
+  $("title").value = a.title || "";
+  $("source").value = a.source || "";
+  $("content").value = a.content || "";
+  $("editing").textContent = currentId ? "مقال محفوظ" : "مقال جديد";
+  $("editing").className = "badge" + (a.status === "published" ? " pub" : "");
+  $("promptBox").hidden = true;
+  count();
+}
+$("content").addEventListener("input", count);
+
+$("copyPrompt").onclick = async () => {
+  const p = INSTRUCTIONS + "\n\nرابط المصدر: " + ($("source").value || "غير محدد") + "\n\nالنص الرسمي:\n" + $("content").value;
+  try {
+    await navigator.clipboard.writeText(p);
+    say("تنسخات التعليمات والنص ✅ لصقها فمحادثة Claude");
+  } catch {
+    $("prompt").value = p;
+    $("promptBox").hidden = false;
+    $("prompt").select();
+    say("انسخ النص من المربع اللي ظهر لتحت", false);
+  }
+};
+
+async function saveArticle(status) {
+  const body = { title: $("title").value.trim(), source: $("source").value.trim(), content: $("content").value, status };
+  try {
+    if (!body.title) throw new Error("خاص عنوان");
+    if (status === "published" && body.content.trim().length < 50) throw new Error("النص قصير بزاف باش يتنشر");
+    if (currentId) {
+      const qs = ["title", "source", "content", "status"].map((f) => "&updateMask.fieldPaths=" + f).join("");
+      await fs("PATCH", "/siyasat_reports/" + currentId, { fields: { title: S(body.title), source: S(body.source), content: S(body.content), status: S(status) } }, qs);
+    } else {
+      const id = newId();
+      await fs("POST", "/siyasat_reports", {
+        fields: { title: S(body.title), source: S(body.source), content: S(body.content), status: S(status), date: S(new Date().toISOString()) },
+      }, "&documentId=" + id);
+      currentId = id;
+    }
+    setEditor(body);
+    say(status === "published" ? "تنشر المقال ✅" : "تحفظات المسودة ✅");
+    loadArticles();
+  } catch (e) { say(e.message, false); }
+}
+$("saveDraft").onclick = () => saveArticle("draft");
+$("publish").onclick = () => saveArticle("published");
+$("newBtn").onclick = () => { currentId = null; setEditor({}); };
+
+/* ---------- المقالات ---------- */
+async function loadArticles() {
+  const ul = $("articles");
+  ul.replaceChildren();
+  try {
+    const d = await fs("GET", "/siyasat_reports", null, "&pageSize=300&mask.fieldPaths=title&mask.fieldPaths=status&mask.fieldPaths=date");
+    const list = (d.documents || []).map(dec).sort((a, b) => (a.date < b.date ? 1 : -1));
+    if (!list.length) {
+      ul.append(el("li", "مازال ما كاين حتى مقال.", "muted"));
+      return;
+    }
+    list.forEach((a) => {
+      const pub = a.status === "published";
+      const li = el("li", null, "item");
+      const info = el("div");
+      info.append(
+        el("strong", a.title),
+        el("span", pub ? "منشور" : "مسودة", "badge" + (pub ? " pub" : "")),
+        el("div", fmt(a.date), "muted")
+      );
+      const btns = el("div", null, "btns");
+
+      const edit = el("button", "تعديل", "sm");
+      edit.onclick = async () => {
+        try {
+          const full = dec(await fs("GET", "/siyasat_reports/" + a.id));
+          currentId = full.id;
+          setEditor(full);
+          $("editor").scrollIntoView({ behavior: "smooth" });
+        } catch (e) { say(e.message, false); }
+      };
+
+      const toggle = el("button", pub ? "إلغاء النشر" : "نشر", "sm " + (pub ? "sec" : "ok"));
+      toggle.onclick = async () => {
+        try {
+          await fs("PATCH", "/siyasat_reports/" + a.id, { fields: { status: S(pub ? "draft" : "published") } }, "&updateMask.fieldPaths=status");
+          say(pub ? "رجع مسودة ✅" : "تنشر المقال ✅");
+          loadArticles();
+        } catch (e) { say(e.message, false); }
+      };
+
+      const del = el("button", "حذف", "sm bad");
+      del.onclick = async () => {
+        if (!confirm("حذف هاد المقال نهائيا؟")) return;
+        try {
+          await fs("DELETE", "/siyasat_reports/" + a.id);
+          if (currentId === a.id) { currentId = null; setEditor({}); }
+          loadArticles();
+        } catch (e) { say(e.message, false); }
+      };
+
+      btns.append(edit, toggle, del);
+      if (pub) {
+        const view = el("a", "شوف", "muted");
+        view.href = "index.html#" + a.id;
+        view.target = "_blank";
+        view.rel = "noopener";
+        btns.append(view);
+      }
+      li.append(info, btns);
+      ul.append(li);
+    });
+  } catch (e) {
+    say("ما قدرناش نجيبو المقالات: " + e.message, false);
+  }
+}
+
+(async () => {
+  if (!store.get(RT_KEY)) return showLogin("");
+  showLogin("", true);
+  try { await refresh(); await verify(); showPanel(); }
+  catch (e) { clearSession(); showLogin(e.message); }
+})();
+</script>
+</body>
+</html>
