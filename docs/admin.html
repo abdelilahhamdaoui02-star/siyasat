@@ -73,9 +73,17 @@ li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
     </div>
     <div><span id="who" class="muted" dir="ltr"></span> <button id="logout" class="sec sm">خروج</button></div>
   </div>
-
+<section>
+    <h2>1. جيب نص من رابط</h2>
+    <div class="row">
+      <div><label for="url">رابط صفحة رسمية (gov.ma)</label><input id="url" placeholder="https://..." dir="ltr"></div>
+      <button id="fetchBtn">جيب النص</button>
+    </div>
+    <p class="muted">كيخدم بصفحات HTML من مواقع gov.ma. ملفات PDF: افتحها وانسخ النص.</p>
+  </section>
+  
   <section id="editor">
-    <h2>1. المحرر <span id="editing" class="badge"></span></h2>
+    <h2>2. المحرر <span id="editing" class="badge"></span></h2>
     <label for="title">العنوان</label>
     <input id="title" placeholder="مثلا: ميزانية المواطن 2027">
     <label for="source">رابط المصدر الرسمي</label>
@@ -93,7 +101,7 @@ li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   </section>
 
   <section>
-    <h2>2. المقالات</h2>
+    <h2>3. المقالات</h2>
     <ul id="articles"></ul>
   </section>
 
@@ -330,7 +338,50 @@ function setEditor(a) {
   count();
 }
 $("content").addEventListener("input", count);
+/* ---------- جلب نص من رابط (عبر وسيط Google Apps Script) ---------- */
+function extractText(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const title = (doc.querySelector('meta[property="og:title"]') || {}).content || (doc.title || "").trim();
+  doc.querySelectorAll("script,style,noscript,svg,nav,header,footer,aside,form,iframe").forEach((n) => n.remove());
+  const root = doc.querySelector("main, article, #content, .content, #main") || doc.body;
+  root.querySelectorAll("p,li,h1,h2,h3,h4,h5,h6,tr,div,section,br").forEach((n) => n.append("\n"));
+  const text = (root.textContent || "")
+    .replace(/[ \t\u00a0]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return { title: title.trim(), text };
+}
 
+$("fetchBtn").onclick = async () => {
+  const b = $("fetchBtn");
+  const proxy = CFG.fetchProxy;
+  const url = $("url").value.trim();
+  if (!proxy) return say("وسيط الجلب ما مضبوطش فـ firebase-config.js", false);
+  if (!/^https:\/\//i.test(url)) return say("دخل رابط كيبدا بـ https://", false);
+  b.disabled = true;
+  b.textContent = "كنجيبو...";
+  try {
+    const t = await token();
+    const r = await fetch(proxy, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ token: t, url }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    const x = extractText(d.body);
+    if (x.text.length < 50) throw new Error("ما لقيناش نص فهاد الصفحة");
+    currentId = null;
+    setEditor({ title: x.title, source: url, content: x.text });
+    say("تجاب النص ✅ راجعو قبل ما تكمل");
+    $("editor").scrollIntoView({ behavior: "smooth" });
+  } catch (e) {
+    say("ما قدرناش نجيبو: " + e.message, false);
+  }
+  b.disabled = false;
+  b.textContent = "جيب النص";
+};
 $("copyPrompt").onclick = async () => {
   const p = INSTRUCTIONS + "\n\nرابط المصدر: " + ($("source").value || "غير محدد") + "\n\nالنص الرسمي:\n" + $("content").value;
   try {
