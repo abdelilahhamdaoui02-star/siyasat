@@ -56,6 +56,7 @@ footer{padding:28px 0 40px;color:var(--muted);font-size:15px}
 .reports{display:grid;gap:12px;margin-top:18px}
 .card{display:block;background:var(--white);border:1px solid var(--rule);border-inline-start:5px solid var(--saffron);border-radius:12px;padding:16px 22px;text-decoration:none;color:inherit}
 .card:hover{border-color:var(--cobalt);border-inline-start-color:var(--cobalt)}
+.card .k{font-size:13px;font-weight:700;color:var(--cobalt)}
 .card .t{font-weight:700;font-size:19px}
 .card .d{color:var(--muted);font-size:14px}
 .back{display:inline-block;margin:0 0 14px;font-weight:700;text-decoration:none}
@@ -65,13 +66,31 @@ footer{padding:28px 0 40px;color:var(--muted);font-size:15px}
 .single{border-top:1px solid var(--rule);border-radius:14px}
 .tail{margin-top:16px;color:var(--muted);font-size:15px}
 .msg{color:var(--muted)}
+
+/* ---- المجالات ---- */
+.domains{padding-bottom:12px}
+.sec-lead{color:var(--muted);margin:0 0 18px}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.cat-card{display:flex;flex-direction:column;gap:4px;padding:16px 18px;background:var(--white);border:1px solid var(--rule);border-radius:14px;text-decoration:none;color:var(--ink);transition:transform .15s,box-shadow .15s,border-color .15s}
+.cat-card:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(18,33,63,.12);border-color:var(--cobalt)}
+.cat-card.is-empty{opacity:.65}
+.cat-icon{font-size:30px;line-height:1.3}
+.cat-name{font-size:18px;line-height:1.6}
+.cat-hint{color:var(--muted);font-size:14px;line-height:1.7;flex:1}
+.cat-count{align-self:flex-start;margin-top:6px;font-size:13px;font-weight:700;padding:1px 12px;border-radius:99px;background:#e3ecfb;color:#1d4a91}
+.cat-card.is-empty .cat-count{background:#eef0f4;color:var(--muted)}
+.pills{display:flex;gap:8px;overflow-x:auto;padding:8px 2px 10px;margin-top:10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.pill{flex:0 0 auto;font:inherit;font-size:15px;padding:6px 16px;border-radius:99px;border:1px solid var(--rule);background:var(--white);color:var(--ink);cursor:pointer;white-space:nowrap}
+.pill:hover{border-color:var(--cobalt)}
+.pill[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+@media(max-width:520px){.cat-grid{grid-template-columns:repeat(2,1fr);gap:10px}.cat-card{padding:14px}.cat-hint{display:none}}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
     <a class="logo" href="#">سياسات</a>
-    <nav><a href="#reports">التقارير</a><a href="#method">المنهجية</a></nav>
+    <nav><a href="#domains">المجالات</a><a href="#reports">التقارير</a><a href="#method">المنهجية</a></nav>
   </div>
 </header>
 <main id="app"></main>
@@ -98,7 +117,7 @@ async function fsList() {
       structuredQuery: {
         from: [{ collectionId: "siyasat_reports" }],
         where: { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "published" } } },
-        select: { fields: [{ fieldPath: "title" }, { fieldPath: "date" }] },
+        select: { fields: [{ fieldPath: "title" }, { fieldPath: "date" }, { fieldPath: "category" }] },
       },
     }),
   });
@@ -121,6 +140,88 @@ const el = (tag, text, cls) => {
   return e;
 };
 const fmt = (d) => new Date(d).toLocaleDateString("fr-FR");
+
+/* ---------- المجالات (نفس الـ slugs اللي فصفحة الأدمين) ---------- */
+const CATS = [
+  { slug: "social",     label: "الاجتماعي والمعيشي",        icon: "🤝", hint: "الدعم الاجتماعي، الضمان الاجتماعي، التعويضات" },
+  { slug: "education",  label: "التعليم والتكوين",          icon: "🎓", hint: "المدرسة العمومية، المنح، التكوين المهني" },
+  { slug: "health",     label: "الصحة والحماية الاجتماعية", icon: "🩺", hint: "التغطية الصحية AMO، المستشفيات" },
+  { slug: "housing",    label: "السكن والتعمير",            icon: "🏠", hint: "دعم السكن، رخص البناء" },
+  { slug: "work",       label: "الشغل والاستثمار",          icon: "💼", hint: "التشغيل، دعم المقاولات، قانون الشغل" },
+  { slug: "economy",    label: "الاقتصاد والمالية",         icon: "📊", hint: "قانون المالية، الميزانية، الأسعار" },
+  { slug: "governance", label: "الإدارة والحكامة",          icon: "🏛️", hint: "الحكومة، الإدارة الرقمية، المراقبة" },
+];
+const OTHER = { slug: "other", label: "مجالات أخرى", icon: "📄", hint: "" };
+const CAT_BY = {};
+CATS.concat([OTHER]).forEach((c) => (CAT_BY[c.slug] = c));
+const catOf = (r) => (CAT_BY[r.category] ? r.category : "other");
+
+let ALL = [];          // التقارير المنشورة
+let activeCat = "all"; // المجال المختار
+
+function counts() {
+  const c = { all: ALL.length };
+  ALL.forEach((r) => { const k = catOf(r); c[k] = (c[k] || 0) + 1; });
+  return c;
+}
+
+function drawDomains() {
+  const box = document.getElementById("domains-grid");
+  if (!box) return;
+  const c = counts();
+  box.replaceChildren();
+  CATS.forEach((cat) => {
+    const n = c[cat.slug] || 0;
+    const a = el("a", null, "cat-card" + (n ? "" : " is-empty"));
+    a.href = "#reports";
+    a.append(
+      el("span", cat.icon, "cat-icon"),
+      el("strong", cat.label, "cat-name"),
+      el("span", cat.hint, "cat-hint"),
+      el("span", n ? n + " تقرير" : "قريبا", "cat-count")
+    );
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      activeCat = cat.slug;
+      drawPills();
+      drawList();
+      document.getElementById("reports").scrollIntoView();
+    });
+    box.append(a);
+  });
+}
+
+function drawPills() {
+  const box = document.getElementById("pills");
+  if (!box) return;
+  const c = counts();
+  box.replaceChildren();
+  [{ slug: "all", label: "الكل" }].concat(CATS, c.other ? [OTHER] : []).forEach((cat) => {
+    const b = el("button", cat.label + " (" + (c[cat.slug] || 0) + ")", "pill");
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(cat.slug === activeCat));
+    b.addEventListener("click", () => { activeCat = cat.slug; drawPills(); drawList(); });
+    box.append(b);
+  });
+}
+
+function drawList() {
+  const box = document.getElementById("list");
+  if (!box) return;
+  const shown = ALL.filter((r) => activeCat === "all" || catOf(r) === activeCat);
+  box.replaceChildren();
+  if (!shown.length) {
+    box.append(el("p", ALL.length ? "ما كاين حتى تقرير فهاد المجال دابا." : "مازال ما كاين حتى تقرير.", "msg"));
+    return;
+  }
+  shown.forEach((r) => {
+    const cat = CAT_BY[catOf(r)];
+    const a = el("a", null, "card");
+    a.href = "#" + r.id;
+    a.append(el("div", cat.icon + " " + cat.label, "k"), el("div", r.title, "t"), el("div", fmt(r.date), "d"));
+    box.append(a);
+  });
+}
 
 function inline(parent, text) {
   text.split(/(\*\*[^*]+\*\*)/).forEach((part) => {
@@ -182,8 +283,14 @@ function homeView() {
   <p class="note">مثال من وثيقة «ميزانية المواطن 2027».</p>
   <a class="btn" href="#reports">شوف التقارير</a>
 </div>
+<section id="domains" class="domains"><div class="wrap">
+  <h2>تصفح حسب المجال</h2>
+  <p class="sec-lead">اختار المجال اللي كيهمك وشوف شنو كيتبدل فيه.</p>
+  <div class="cat-grid" id="domains-grid"></div>
+</div></section>
 <section id="reports"><div class="wrap">
   <h2>آخر التقارير</h2>
+  <div class="pills" id="pills" role="group" aria-label="تصفية حسب المجال"></div>
   <div class="reports" id="list"><p class="msg">كنجيبو التقارير...</p></div>
 </div></section>
 <section id="method" class="method"><div class="wrap">
@@ -194,23 +301,19 @@ function homeView() {
     <div><strong>القراءة النقدية معلمة</strong>كتبنى على الأرقام فقط، بلا رأي سياسي، وكنوضحو أنها تحليل ماشي معلومة رسمية.</div>
   </div>
 </div></section>`;
+  drawDomains(); // كتبان الشبكة دابا والعدادات من بعد
   loadList();
 }
 
 async function loadList() {
-  const box = document.getElementById("list");
   try {
-    const list = await fsList();
-    box.replaceChildren();
-    if (!list.length) { box.append(el("p", "مازال ما كاين حتى تقرير.", "msg")); return; }
-    list.forEach((r) => {
-      const a = el("a", null, "card");
-      a.href = "#" + r.id;
-      a.append(el("div", r.title, "t"), el("div", fmt(r.date), "d"));
-      box.append(a);
-    });
+    ALL = await fsList();
+    drawDomains();
+    drawPills();
+    drawList();
   } catch {
-    box.replaceChildren(el("p", "ما قدرناش نجيبو التقارير", "msg"));
+    const box = document.getElementById("list");
+    if (box) box.replaceChildren(el("p", "ما قدرناش نجيبو التقارير", "msg"));
   }
 }
 
@@ -280,7 +383,7 @@ async function reportView(id) {
 
 function route() {
   const h = decodeURIComponent(location.hash.slice(1));
-  if (!h || h === "reports" || h === "method") {
+  if (!h || h === "reports" || h === "method" || h === "domains") {
     document.title = "سياسات: السياسات العمومية بالدارجة";
     if (!document.getElementById("list")) homeView();
     if (h) setTimeout(() => document.getElementById(h)?.scrollIntoView(), 0);
