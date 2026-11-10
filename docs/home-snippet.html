@@ -1,0 +1,23 @@
+<!-- 1) فـ <head> ديال index.html -->
+<link rel="stylesheet" href="categories.css">
+
+<!-- 2) فـ <body>، من بعد قسم "شوف التقارير" (الـ hero) -->
+<section class="cats-section" id="domains" aria-labelledby="domainsTitle">
+  <h2 id="domainsTitle">تصفح حسب المجال</h2>
+  <p class="lead">اختار المجال اللي كيهمك وشوف شنو كيتبدل فيه.</p>
+  <div id="catGrid" class="cat-grid" aria-live="polite"></div>
+</section>
+
+<!-- 3) قبل </body> (إلا كان firebase-config.js محمّل ديجا ما تعاودش تزيدو) -->
+<script src="firebase-config.js"></script>
+<script src="categories.js"></script>
+<script>
+(function () {
+  const C = window.SiyasatCats, box = document.getElementById("catGrid");
+  // كتبان الشبكة دابا، والعدادات كتزاد من بعد
+  C.renderGrid(box, {}, "reports.html");
+  C.fetchPublished()
+    .then((list) => C.renderGrid(box, C.countBy(list), "reports.html"))
+    .catch(() => {});
+})();
+</script>

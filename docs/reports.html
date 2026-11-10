@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>التقارير - سياسات</title>
+<link rel="stylesheet" href="categories.css">
+<style>
+body{font-family:Tahoma,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.8;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
+h1{margin:0 0 4px;font-size:30px}
+.sub{color:var(--muted);margin:0 0 14px}
+.back{display:inline-block;margin-bottom:10px;color:var(--cobalt);text-decoration:none;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← الصفحة الرئيسية</a>
+  <h1>التقارير</h1>
+  <p class="sub">اختار المجال اللي كيهمك.</p>
+
+  <div id="pills" class="pills" role="group" aria-label="تصفية حسب المجال"></div>
+  <input id="q" class="search" type="search" placeholder="قلب فالعناوين..." aria-label="بحث">
+  <div id="list" class="report-list" aria-live="polite"></div>
+  <p id="status" class="status">كنحملو التقارير...</p>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="categories.js"></script>
+<script>
+(async function () {
+  const C = window.SiyasatCats;
+  const $ = (id) => document.getElementById(id);
+  let all = [], active = "all", query = "";
+
+  const valid = (s) => s === "all" || s === "other" || C.CATEGORIES.some((c) => c.slug === s);
+  const fromUrl = new URLSearchParams(location.search).get("cat");
+  if (fromUrl && valid(fromUrl)) active = fromUrl;
+
+  function draw() {
+    const counts = C.countBy(all);
+    C.renderPills($("pills"), counts, active, (slug) => {
+      active = slug;
+      history.replaceState(null, "", slug === "all" ? location.pathname : "?cat=" + slug);
+      draw();
+    });
+    const q = query.trim().toLowerCase();
+    const shown = all.filter((r) =>
+      (active === "all" || C.catOf(r) === active) && (!q || (r.title || "").toLowerCase().includes(q)));
+    C.renderList($("list"), shown);
+  }
+
+  $("q").addEventListener("input", (e) => { query = e.target.value; draw(); });
+
+  try {
+    all = await C.fetchPublished();
+    $("status").hidden = true;
+    draw();
+  } catch (e) {
+    $("status").textContent = "ما قدرناش نحملو التقارير. عاود من بعد شوية.";
+  }
+})();
+</script>
+</body>
+</html>
