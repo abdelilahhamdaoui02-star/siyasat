@@ -15,7 +15,7 @@ h1{margin:0}
 section{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:18px 20px;margin:18px 0}
 h2{margin:0 0 10px;font-size:20px}
 label{display:block;margin:12px 0 4px;font-weight:bold;font-size:15px}
-input,textarea{width:100%;padding:10px;font:inherit;border:1px solid #b9c1cf;border-radius:8px;background:#fff;color:inherit}
+input,textarea,select{width:100%;padding:10px;font:inherit;border:1px solid #b9c1cf;border-radius:8px;background:#fff;color:inherit}
 textarea{min-height:260px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 .row>*{flex:1;min-width:160px}
@@ -88,6 +88,17 @@ li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
     <h2>2. المحرر <span id="editing" class="badge"></span></h2>
     <label for="title">العنوان</label>
     <input id="title" placeholder="مثلا: ميزانية المواطن 2027">
+    <label for="category">المجال</label>
+    <select id="category">
+      <option value="">بلا مجال (أخرى)</option>
+      <option value="social">الاجتماعي والمعيشي</option>
+      <option value="education">التعليم والتكوين</option>
+      <option value="health">الصحة والحماية الاجتماعية</option>
+      <option value="housing">السكن والتعمير</option>
+      <option value="work">الشغل والاستثمار</option>
+      <option value="economy">الاقتصاد والمالية</option>
+      <option value="governance">الإدارة والحكامة</option>
+    </select>
     <label for="source">رابط المصدر الرسمي</label>
     <input id="source" placeholder="https://..." dir="ltr">
     <label for="content">النص <span id="count" class="muted"></span></label>
@@ -361,6 +372,7 @@ function setEditor(a) {
   $("title").value = a.title || "";
   $("source").value = a.source || "";
   $("content").value = a.content || "";
+  $("category").value = a.category || "";
   $("editing").textContent = currentId ? "مقال محفوظ" : "مقال جديد";
   $("editing").className = "badge" + (a.status === "published" ? " pub" : "");
   $("promptBox").hidden = true;
@@ -464,17 +476,17 @@ $("copyPrompt").onclick = async () => {
 };
 
 async function saveArticle(status) {
-  const body = { title: $("title").value.trim(), source: $("source").value.trim(), content: $("content").value, status };
+  const body = { title: $("title").value.trim(), source: $("source").value.trim(), content: $("content").value, category: $("category").value, status };
   try {
     if (!body.title) throw new Error("خاص عنوان");
     if (status === "published" && body.content.trim().length < 50) throw new Error("النص قصير بزاف باش يتنشر");
     if (currentId) {
-      const qs = ["title", "source", "content", "status"].map((f) => "&updateMask.fieldPaths=" + f).join("");
-      await fs("PATCH", "/siyasat_reports/" + currentId, { fields: { title: S(body.title), source: S(body.source), content: S(body.content), status: S(status) } }, qs);
+      const qs = ["title", "source", "content", "category", "status"].map((f) => "&updateMask.fieldPaths=" + f).join("");
+      await fs("PATCH", "/siyasat_reports/" + currentId, { fields: { title: S(body.title), source: S(body.source), content: S(body.content), category: S(body.category), status: S(status) } }, qs);
     } else {
       const id = newId();
       await fs("POST", "/siyasat_reports", {
-        fields: { title: S(body.title), source: S(body.source), content: S(body.content), status: S(status), date: S(new Date().toISOString()) },
+        fields: { title: S(body.title), source: S(body.source), content: S(body.content), category: S(body.category), status: S(status), date: S(new Date().toISOString()) },
       }, "&documentId=" + id);
       currentId = id;
     }
