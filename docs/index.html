@@ -84,21 +84,50 @@ footer{padding:28px 0 40px;color:var(--muted);font-size:15px}
 .pill:hover{border-color:var(--cobalt)}
 .pill[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
 @media(max-width:520px){.cat-grid{grid-template-columns:repeat(2,1fr);gap:10px}.cat-card{padding:14px}.cat-hint{display:none}}
+header .wrap{flex-wrap:wrap;gap:4px 16px}
 </style>
+<link rel="stylesheet" href="site.css">
 </head>
 <body>
 <header>
   <div class="wrap">
     <a class="logo" href="#">سياسات</a>
-    <nav><a href="#domains">المجالات</a><a href="#reports">التقارير</a><a href="#method">المنهجية</a></nav>
+    <nav><a href="#domains">المجالات</a><a href="#reports">التقارير</a><a href="about.html">من نحن</a><a href="contact.html">اتصل بنا</a></nav>
   </div>
 </header>
+<div class="sx-sections"><nav class="sx-bar-in" id="sx-sections" aria-label="المجالات"></nav></div>
 <main id="app"></main>
-<footer>
-  <div class="wrap">هاد الموقع كيبسط النصوص الرسمية، والمرجع الأصلي هو دائما النص الرسمي. القراءة النقدية تحليل مبني على الأرقام، ماشي معلومة رسمية.</div>
+<footer class="sx-footer">
+  <div class="sx-in">
+    <div class="sx-cols">
+      <div>
+        <strong>سياسات</strong>
+        <p>موقع يبسّط السياسات العمومية والنصوص الرسمية في المغرب بالدارجة المغربية، بالأرقام الواردة في الوثيقة ورابط المصدر الرسمي.</p>
+        <p>المرجع الأصلي هو دائما النص الرسمي. القراءة النقدية تحليل مبني على الأرقام وليست معلومة رسمية.</p>
+      </div>
+      <div>
+        <strong>الموقع</strong>
+        <a href="about.html">من نحن</a>
+        <a href="contact.html">اتصل بنا</a>
+        <a href="index.html#method">كيف نشتغل</a>
+      </div>
+      <div>
+        <strong>قانوني</strong>
+        <a href="privacy.html">سياسة الخصوصية</a>
+        <a href="cookies.html">سياسة ملفات الارتباط (الكوكيز)</a>
+        <a href="terms.html">شروط الاستخدام</a>
+        <button type="button" class="sx-link" data-cookie-settings>إعدادات الكوكيز</button>
+      </div>
+    </div>
+    <div class="sx-bottom">
+      <span>© <span data-year>2026</span> سياسات. جميع الحقوق محفوظة.</span>
+      <span>طُوِّر من طرف <b>siyasat</b></span>
+    </div>
+  </div>
 </footer>
 
 <script src="firebase-config.js"></script>
+<script src="site.js"></script>
 <script>
 const FB = window.FIREBASE_CONFIG;
 const DB = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents";
@@ -142,15 +171,7 @@ const el = (tag, text, cls) => {
 const fmt = (d) => new Date(d).toLocaleDateString("fr-FR");
 
 /* ---------- المجالات (نفس الـ slugs اللي فصفحة الأدمين) ---------- */
-const CATS = [
-  { slug: "social",     label: "الاجتماعي والمعيشي",        icon: "🤝", hint: "الدعم الاجتماعي، الضمان الاجتماعي، التعويضات" },
-  { slug: "education",  label: "التعليم والتكوين",          icon: "🎓", hint: "المدرسة العمومية، المنح، التكوين المهني" },
-  { slug: "health",     label: "الصحة والحماية الاجتماعية", icon: "🩺", hint: "التغطية الصحية AMO، المستشفيات" },
-  { slug: "housing",    label: "السكن والتعمير",            icon: "🏠", hint: "دعم السكن، رخص البناء" },
-  { slug: "work",       label: "الشغل والاستثمار",          icon: "💼", hint: "التشغيل، دعم المقاولات، قانون الشغل" },
-  { slug: "economy",    label: "الاقتصاد والمالية",         icon: "📊", hint: "قانون المالية، الميزانية، الأسعار" },
-  { slug: "governance", label: "الإدارة والحكامة",          icon: "🏛️", hint: "الحكومة، الإدارة الرقمية، المراقبة" },
-];
+const CATS = window.SIYASAT_DOMAINS.map((d) => ({ slug: d.id, label: d.label, icon: d.icon, hint: d.hint }));
 const OTHER = { slug: "other", label: "مجالات أخرى", icon: "📄", hint: "" };
 const CAT_BY = {};
 CATS.concat([OTHER]).forEach((c) => (CAT_BY[c.slug] = c));
@@ -173,20 +194,13 @@ function drawDomains() {
   CATS.forEach((cat) => {
     const n = c[cat.slug] || 0;
     const a = el("a", null, "cat-card" + (n ? "" : " is-empty"));
-    a.href = "#reports";
+    a.href = "domain/" + cat.slug + ".html";
     a.append(
       el("span", cat.icon, "cat-icon"),
       el("strong", cat.label, "cat-name"),
       el("span", cat.hint, "cat-hint"),
       el("span", n ? n + " تقرير" : "قريبا", "cat-count")
     );
-    a.addEventListener("click", (e) => {
-      e.preventDefault();
-      activeCat = cat.slug;
-      drawPills();
-      drawList();
-      document.getElementById("reports").scrollIntoView();
-    });
     box.append(a);
   });
 }
@@ -331,6 +345,12 @@ async function reportView(id) {
       const s = el("a", "المصدر الرسمي");
       s.href = r.source; s.target = "_blank"; s.rel = "noopener";
       meta.append(document.createTextNode(" · "), s);
+    }
+    const dm = CAT_BY[r.category];
+    if (dm && r.category !== "other") {
+      const l = el("a", dm.icon + " " + dm.label);
+      l.href = "domain/" + r.category + ".html";
+      meta.append(document.createTextNode(" · "), l);
     }
     wrap.append(meta);
 
