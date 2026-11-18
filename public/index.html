@@ -58,9 +58,33 @@ section{padding:36px 0}
 footer{padding:28px 0 40px;color:var(--muted);font-size:15px}
 @media(max-width:700px){.swap,.rules{grid-template-columns:1fr}nav a{margin-inline-start:14px}.tabs button{padding:10px 10px;font-size:15px}.panel{padding:4px 16px 20px}}
 
-.reports{display:grid;gap:12px;margin-top:18px}
-.card{display:block;background:var(--white);border:1px solid var(--rule);border-inline-start:5px solid var(--saffron);border-radius:12px;padding:16px 22px;text-decoration:none;color:inherit}
-.card:hover{border-color:var(--cobalt);border-inline-start-color:var(--cobalt)}
+.reports{display:grid;gap:12px}
+.card{display:block;background:var(--white);border:1px solid var(--rule);border-inline-start:5px solid var(--c,var(--saffron));border-radius:12px;padding:16px 22px;text-decoration:none;color:inherit}
+.card:hover{border-color:var(--c,var(--cobalt));border-inline-start-color:var(--c,var(--cobalt))}
+.card .row{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.badge{display:inline-block;font-size:13px;font-weight:700;color:var(--c,var(--cobalt));background:color-mix(in srgb,var(--c,var(--cobalt)) 11%,white);border-radius:999px;padding:0 10px;margin-bottom:4px}
+.fig{flex:none;text-align:center;max-width:150px;line-height:1.4}
+.fig strong{display:block;font-family:"Reem Kufi",Tahoma,sans-serif;font-size:24px;color:var(--c,var(--cobalt))}
+.fig span{display:block;font-size:12.5px;color:var(--muted)}
+.sub{color:var(--muted);margin:0}
+.domains{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.dom{--c:var(--cobalt);text-decoration:none;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:start;font:inherit;color:inherit;background:var(--white);border:1px solid var(--rule);border-top:4px solid var(--c);border-radius:12px;padding:16px 18px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.dom:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(18,33,63,.08);border-color:var(--c)}
+.dom .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:24px;line-height:1;background:color-mix(in srgb,var(--c) 12%,white)}
+.dom .n{font-weight:700;font-size:18px;line-height:1.5}
+.dom .h{font-size:13.5px;color:var(--muted);line-height:1.7}
+.dom .c{font-size:14px;font-weight:700;color:var(--c);margin-top:auto}
+.dom.empty{opacity:.7}
+.dom.empty .c{color:var(--muted);font-weight:500}
+.reports{margin-top:6px}
+.dhead{display:flex;align-items:center;gap:16px;margin:4px 0 6px}
+.dhead .ic{width:60px;height:60px;border-radius:16px;display:grid;place-items:center;font-size:32px;line-height:1;background:color-mix(in srgb,var(--c) 12%,white);flex:none}
+.dhead h1{font-size:clamp(26px,5vw,40px);margin:0;color:var(--c)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{--c:var(--cobalt);text-decoration:none;color:var(--ink);background:var(--white);border:1px solid var(--rule);border-radius:999px;padding:3px 14px;font-size:15px}
+.chip:hover{border-color:var(--c);color:var(--c)}
+.more{margin-top:34px}
+@media(max-width:700px){.domains{grid-template-columns:repeat(2,1fr);gap:10px}.dom{padding:14px}.dom .h{display:none}.dom .n{font-size:16px}.card .row{flex-direction:column;align-items:flex-start;gap:8px}.fig{text-align:start;max-width:none}.fig strong{display:inline;font-size:20px;margin-inline-end:8px}.fig span{display:inline}}
 .card .t{font-weight:700;font-size:19px}
 .card .d{color:var(--muted);font-size:14px}
 .back{display:inline-block;margin:0 0 14px;font-weight:700;text-decoration:none}
@@ -71,19 +95,47 @@ footer{padding:28px 0 40px;color:var(--muted);font-size:15px}
 .tail{margin-top:16px;color:var(--muted);font-size:15px}
 .msg{color:var(--muted)}
 </style>
+<link rel="stylesheet" href="/site.css">
 </head>
 <body>
 <header>
   <div class="wrap">
     <a class="logo" href="/">سياسات</a>
-    <nav><a href="/#reports">التقارير</a><a href="/#method">المنهجية</a><a href="/about.html">من نحن</a></nav>
+    <nav><a href="/#domains">المجالات</a><a href="/#method">المنهجية</a><a href="/about.html">من نحن</a><a href="/contact.html">اتصل بنا</a></nav>
   </div>
 </header>
+<div class="sx-sections"><nav class="sx-bar-in" id="sx-sections" aria-label="المجالات"></nav></div>
 <main id="app"></main>
-<footer>
-  <div class="wrap">هاد الموقع كيبسط النصوص الرسمية، والمرجع الأصلي هو دائما النص الرسمي. القراءة النقدية تحليل مبني على الأرقام، ماشي معلومة رسمية. <a href="/about.html">من نحن والخصوصية</a></div>
+<footer class="sx-footer">
+  <div class="sx-in">
+    <div class="sx-cols">
+      <div>
+        <strong>سياسات</strong>
+        <p>موقع يبسّط السياسات العمومية والنصوص الرسمية في المغرب بالدارجة المغربية، بالأرقام الواردة في الوثيقة ورابط المصدر الرسمي.</p>
+        <p>المرجع الأصلي هو دائما النص الرسمي. القراءة النقدية تحليل مبني على الأرقام وليست معلومة رسمية.</p>
+      </div>
+      <div>
+        <strong>الموقع</strong>
+        <a href="/about.html">من نحن</a>
+        <a href="/contact.html">اتصل بنا</a>
+        <a href="/#method">كيف نشتغل</a>
+      </div>
+      <div>
+        <strong>قانوني</strong>
+        <a href="/privacy.html">سياسة الخصوصية</a>
+        <a href="/cookies.html">سياسة ملفات الارتباط (الكوكيز)</a>
+        <a href="/terms.html">شروط الاستخدام</a>
+        <button type="button" class="sx-link" data-cookie-settings>إعدادات الكوكيز</button>
+      </div>
+    </div>
+    <div class="sx-bottom">
+      <span>© <span data-year>2026</span> سياسات. جميع الحقوق محفوظة.</span>
+      <span>طُوِّر من طرف <b>siyasat</b></span>
+    </div>
+  </div>
 </footer>
 
+<script src="/site.js"></script>
 <script>
 const app = document.getElementById("app");
 const el = (tag, text, cls) => {
@@ -154,9 +206,15 @@ function homeView() {
   <p class="note">مثال من وثيقة «ميزانية المواطن 2027».</p>
   <a class="btn" href="#reports">شوف التقارير</a>
 </div>
+<section id="domains"><div class="wrap">
+  <h2>تصفح حسب المجال</h2>
+  <p class="sub">اختر المجال الذي يهمك لتصل إلى صفحته الخاصة وكل تقاريره.</p>
+  <div class="domains" id="grid"></div>
+</div></section>
 <section id="reports"><div class="wrap">
   <h2>آخر التقارير</h2>
-  <div class="reports" id="list"><p class="msg">كنجيبو التقارير...</p></div>
+  <div class="reports" id="list" aria-live="polite"><p class="msg">كنجيبو التقارير...</p></div>
+  <div class="ad-slot" data-slot=""></div>
 </div></section>
 <section id="method" class="method"><div class="wrap">
   <h2>كيفاش كنخدمو</h2>
@@ -166,24 +224,110 @@ function homeView() {
     <div><strong>القراءة النقدية معلمة</strong>كتبنى على الأرقام فقط، بلا رأي سياسي، وكنوضحو أنها تحليل ماشي معلومة رسمية.</div>
   </div>
 </div></section>`;
-  loadList();
+  loadHome();
 }
 
-async function loadList() {
-  const box = document.getElementById("list");
-  try {
-    const list = await (await fetch("/api/reports")).json();
-    box.replaceChildren();
-    if (!list.length) { box.append(el("p", "مازال ما كاين حتى تقرير.", "msg")); return; }
-    list.forEach((r) => {
-      const a = el("a", null, "card");
-      a.href = "/report/" + r.id;
-      a.append(el("div", r.title, "t"), el("div", fmt(r.date), "d"));
-      box.append(a);
-    });
-  } catch {
-    box.replaceChildren(el("p", "ما قدرناش نجيبو التقارير", "msg"));
+let DOMS = [], ALL = [];
+
+async function loadData() {
+  const [doms, list] = await Promise.all([
+    fetch("/api/domains").then((r) => r.json()),
+    fetch("/api/reports").then((r) => r.json()),
+  ]);
+  DOMS = doms; ALL = list;
+}
+
+function card(r) {
+  const d = DOMS.find((x) => x.id === r.domain);
+  const a = el("a", null, "card");
+  a.href = "/report/" + r.id;
+  if (d) a.style.setProperty("--c", d.color);
+  const row = el("div", null, "row");
+  const txt = el("div");
+  if (d) txt.append(el("span", d.icon + " " + d.label, "badge"));
+  txt.append(el("div", r.title, "t"), el("div", fmt(r.date), "d"));
+  row.append(txt);
+  if (r.highlight) {
+    const f = el("div", null, "fig");
+    f.append(el("strong", r.highlight.value), el("span", r.highlight.label));
+    row.append(f);
   }
+  a.append(row);
+  return a;
+}
+
+function buildGrid() {
+  const grid = document.getElementById("grid");
+  grid.replaceChildren();
+  DOMS.forEach((d) => {
+    const b = el("a", null, "dom" + (d.count ? "" : " empty"));
+    b.href = "/domain/" + d.id;
+    b.style.setProperty("--c", d.color);
+    const ic = el("span", d.icon, "ic");
+    ic.setAttribute("aria-hidden", "true");
+    b.append(ic, el("span", d.label, "n"), el("span", d.hint, "h"),
+      el("span", d.count ? d.count + (d.count === 1 ? " تقرير" : " تقارير") : "قريبا", "c"));
+    grid.append(b);
+  });
+}
+
+async function loadHome() {
+  const box = document.getElementById("list");
+  try { await loadData(); }
+  catch { box.replaceChildren(el("p", "ما قدرناش نجيبو التقارير", "msg")); return; }
+  buildGrid();
+  box.replaceChildren();
+  if (!ALL.length) { box.append(el("p", "مازال ما كاين حتى تقرير.", "msg")); return; }
+  ALL.forEach((r) => box.append(card(r)));
+  window.siyasatAds && window.siyasatAds.refresh();
+}
+
+// صفحة مجال مستقلة: /domain/<id>
+async function domainView(id) {
+  app.replaceChildren();
+  const wrap = el("div", null, "wrap");
+  const sec = el("section");
+  sec.append(wrap);
+  app.append(sec);
+  const back = el("a", "← الرئيسية", "back");
+  back.href = "/";
+  wrap.append(back);
+  try { await loadData(); }
+  catch { wrap.append(el("p", "ما قدرناش نجيبو التقارير", "msg")); return; }
+  const d = DOMS.find((x) => x.id === id);
+  if (!d) { wrap.append(el("p", "هاد المجال ما كاينش", "msg")); return; }
+  document.title = d.label + " | سياسات";
+  const head = el("div", null, "dhead");
+  head.style.setProperty("--c", d.color);
+  const ic = el("span", d.icon, "ic");
+  ic.setAttribute("aria-hidden", "true");
+  head.append(ic, el("h1", d.label));
+  wrap.append(head, el("p", d.hint, "sub"));
+  const items = ALL.filter((r) => r.domain === id);
+  wrap.append(el("p", items.length ? items.length + (items.length === 1 ? " تقرير" : " تقارير") : "", "meta"));
+  const list = el("div", null, "reports");
+  if (!items.length) {
+    list.append(el("p", "مازال ما كاين حتى تقرير فهاد المجال، وغادي نزيدو قريبا.", "msg"));
+  } else {
+    items.forEach((r) => list.append(card(r)));
+  }
+  wrap.append(list);
+  const slot = el("div", null, "ad-slot");
+  slot.dataset.slot = "";
+  wrap.append(slot);
+  const more = el("div", null, "more");
+  more.append(el("h2", "مجالات أخرى"));
+  const chips = el("div", null, "chips");
+  DOMS.filter((x) => x.id !== id).forEach((x) => {
+    const c = el("a", x.icon + " " + x.label, "chip");
+    c.href = "/domain/" + x.id;
+    c.style.setProperty("--c", x.color);
+    chips.append(c);
+  });
+  more.append(chips);
+  wrap.append(more);
+  window.siyasatSections && window.siyasatSections();
+  window.siyasatAds && window.siyasatAds.refresh();
 }
 
 async function reportView(id) {
@@ -192,7 +336,7 @@ async function reportView(id) {
   const sec = el("section");
   sec.append(wrap);
   app.append(sec);
-  const back = el("a", "← رجوع للتقارير", "back");
+  const back = el("a", "← رجوع", "back");
   back.href = "/#reports";
   wrap.append(back);
   try {
@@ -200,6 +344,7 @@ async function reportView(id) {
     if (!res.ok) { wrap.append(el("p", "التقرير ما كاينش", "msg")); return; }
     const r = await res.json();
     document.title = r.title + " | سياسات";
+    if (/^[a-z0-9-]+$/.test(r.domain || "")) back.href = "/domain/" + r.domain;
     wrap.append(el("h2", r.title));
     const meta = el("p", fmt(r.date), "meta");
     if (/^https?:\/\//.test(r.source)) {
@@ -246,12 +391,22 @@ async function reportView(id) {
       renderInto(t, tail.split("\n").slice(1).join("\n"));
       wrap.append(t);
     }
+    const slot = el("div", null, "ad-slot");
+    slot.dataset.slot = "";
+    wrap.append(slot);
+    window.siyasatAds && window.siyasatAds.refresh();
   } catch {
     wrap.append(el("p", "ما قدرناش نجيبو التقرير", "msg"));
   }
 }
 
 function route() {
+  const dm = /^\/domain\/([a-z0-9-]+)\/?$/.exec(location.pathname);
+  if (dm) {
+    window.scrollTo(0, 0);
+    domainView(dm[1]);
+    return;
+  }
   const m = /^\/report\/([^/]+)\/?$/.exec(location.pathname);
   if (m) {
     window.scrollTo(0, 0);
@@ -259,8 +414,10 @@ function route() {
     return;
   }
   const h = decodeURIComponent(location.hash.slice(1));
-  // روابط قديمة بصيغة #id: كنحولوها للرابط الحقيقي
-  if (h && h !== "reports" && h !== "method") { location.replace("/report/" + encodeURIComponent(h)); return; }
+  // روابط قديمة: #reports/<مجال> تحوّلت لصفحة المجال، و#<id> لصفحة التقرير
+  const lm = /^reports\/([a-z0-9-]+)$/.exec(h);
+  if (lm) { location.replace("/domain/" + lm[1]); return; }
+  if (h && !["reports", "method", "domains"].includes(h)) { location.replace("/report/" + encodeURIComponent(h)); return; }
   document.title = "سياسات: السياسات العمومية بالدارجة";
   if (!document.getElementById("list")) homeView();
   if (h) setTimeout(() => document.getElementById(h)?.scrollIntoView(), 0);

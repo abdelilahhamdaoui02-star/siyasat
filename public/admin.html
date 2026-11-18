@@ -15,7 +15,7 @@ h1{margin:0}
 section{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:18px 20px;margin:18px 0}
 h2{margin:0 0 10px;font-size:20px}
 label{display:block;margin:12px 0 4px;font-weight:bold;font-size:15px}
-input,textarea{width:100%;padding:10px;font:inherit;border:1px solid #b9c1cf;border-radius:8px;background:#fff;color:inherit}
+input,textarea,select{width:100%;padding:10px;font:inherit;border:1px solid #b9c1cf;border-radius:8px;background:#fff;color:inherit}
 textarea{min-height:260px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 .row>*{flex:1;min-width:160px}
@@ -98,6 +98,13 @@ li.item .btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
     <input id="title" placeholder="مثلا: ميزانية المواطن 2027">
     <label for="source">رابط المصدر الرسمي</label>
     <input id="source" placeholder="https://..." dir="ltr">
+    <label for="domain">المجال</label>
+    <select id="domain"><option value="">بلا مجال (غير مصنف)</option></select>
+    <label for="hlValue">الرقم البارز (اختياري، كيبان فبطاقة التقرير)</label>
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px">
+      <input id="hlValue" placeholder="600 درهم" aria-label="الرقم">
+      <input id="hlLabel" placeholder="الدعم الشهري فـ 2027" aria-label="وصف الرقم">
+    </div>
     <label for="content">النص <span id="count" class="muted"></span></label>
     <textarea id="content" placeholder="هنا كيبان النص المستخرج. من بعد حطو التقرير بالدارجة."></textarea>
     <p class="muted">الشكل المدعوم: ## عنوان، ### عنوان صغير، - نقطة، **غليظ**، --- خط فاصل.</p>
@@ -347,6 +354,13 @@ $("addSource").onclick = async () => {
 };
 
 /* ---------- المحرر ---------- */
+fetch("/api/domains").then((r) => r.json()).then((list) => {
+  list.forEach((d) => {
+    const o = document.createElement("option");
+    o.value = d.id; o.textContent = d.icon + " " + d.label;
+    $("domain").append(o);
+  });
+}).catch(() => {});
 function count() {
   $("count").textContent = "(" + $("content").value.length.toLocaleString("fr-FR") + " حرف)";
 }
@@ -354,6 +368,9 @@ function setEditor(a) {
   $("title").value = a.title || "";
   $("source").value = a.source || "";
   $("content").value = a.content || "";
+  $("domain").value = a.domain || "";
+  $("hlValue").value = (a.highlight && a.highlight.value) || "";
+  $("hlLabel").value = (a.highlight && a.highlight.label) || "";
   $("editing").textContent = currentId ? "مقال محفوظ" : "مقال جديد";
   $("editing").className = "badge" + (a.status === "published" ? " pub" : "");
   $("promptBox").hidden = true;
@@ -390,7 +407,11 @@ $("copyPrompt").onclick = async () => {
 };
 
 async function saveArticle(status) {
-  const body = { title: $("title").value, source: $("source").value, content: $("content").value, status };
+  const body = {
+    title: $("title").value, source: $("source").value, content: $("content").value, status,
+    domain: $("domain").value,
+    highlight: { value: $("hlValue").value, label: $("hlLabel").value },
+  };
   try {
     if (currentId) {
       await api("PUT", "/api/admin/articles/" + currentId, body);

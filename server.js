@@ -6,17 +6,23 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const net = require("net");
+const DOMAINS = require("./domains");
+const DOMAIN_IDS = new Set(DOMAINS.map((d) => d.id));
 
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
+// الإعلانات (Google AdSense): كتتفعل فقط إلا تحدد ADSENSE_CLIENT (مثلا ca-pub-1234567890123456)
+const ADS_CLIENT = /^ca-pub-\d{10,20}$/.test(process.env.ADSENSE_CLIENT || "") ? process.env.ADSENSE_CLIENT : "";
+const ADS_SCRIPT = ["https://pagead2.googlesyndication.com", "https://*.googlesyndication.com", "https://*.google.com", "https://*.googleadservices.com", "https://*.doubleclick.net", "https://ep2.adtrafficquality.google"];
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline'" + (ADS_CLIENT ? " " + ADS_SCRIPT.join(" ") : ""),
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src https://fonts.gstatic.com",
-  "img-src 'self' data:",
-  "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
+  "img-src 'self' data:" + (ADS_CLIENT ? " https:" : ""),
+  "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com" + (ADS_CLIENT ? " " + ADS_SCRIPT.join(" ") : ""),
+  ADS_CLIENT ? "frame-src " + ADS_SCRIPT.join(" ") : "frame-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'none'",
   "form-action 'self'",
@@ -227,13 +233,45 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 // ---------- الواجهة العامة (المنشور فقط) ----------
 const isPublished = (r) => (r.status || "published") === "published";
 
+// إعدادات عامة للواجهة (الإعلانات مطفية إلا تحدد ADSENSE_CLIENT)
+app.get("/api/site-config", (req, res) => {
+  res.set("Cache-Control", "public, max-age=300").json({ adsClient: ADS_CLIENT });
+});
+
+// ملف ads.txt المطلوب من Google AdSense
+app.get("/ads.txt", (req, res) => {
+  if (!ADS_CLIENT) return res.status(404).type("text/plain").send("ads.txt not configured");
+  res.type("text/plain").send("google.com, " + ADS_CLIENT.replace(/^ca-/, "") + ", DIRECT, f08c47fec0942fa0\n");
+});
+
 app.get("/api/reports", (req, res) => {
   const list = load("reports.json")
     .filter(isPublished)
-    .map(({ id, title, date }) => ({ id, title, date }))
+    .map(({ id, title, date, domain, highlight }) => ({ id, title, date, domain: domain || "", highlight: highlight || null }))
     .reverse();
   res.json(list);
 });
+
+// المجالات مع عدد التقارير المنشورة فكل وحد
+app.get("/api/domains", (req, res) => {
+  const counts = {};
+  load("reports.json").filter(isPublished).forEach((r) => {
+    if (r.domain) counts[r.domain] = (counts[r.domain] || 0) + 1;
+  });
+  res.json(DOMAINS.map((d) => ({ ...d, count: counts[d.id] || 0 })));
+});
+
+// التحقق من المجال والرقم البارز (اختياريين)
+function cleanDomainId(v) {
+  const d = String(v || "").trim();
+  return DOMAIN_IDS.has(d) ? d : "";
+}
+function cleanHighlight(h) {
+  if (!h || typeof h !== "object") return null;
+  const value = String(h.value || "").trim().slice(0, 40);
+  const label = String(h.label || "").trim().slice(0, 90);
+  return value && label ? { value, label } : null;
+}
 
 app.get("/api/reports/:id", (req, res) => {
   const r = load("reports.json").find((x) => x.id === req.params.id);
@@ -356,7 +394,7 @@ app.post("/api/admin/fetch", async (req, res) => {
 // ---------- الإدارة: المقالات (مسودة / منشور) ----------
 app.get("/api/admin/articles", (req, res) => {
   const list = load("reports.json")
-    .map(({ id, title, date, source, status }) => ({ id, title, date, source, status: status || "published" }))
+    .map(({ id, title, date, source, status, domain }) => ({ id, title, date, source, domain: domain || "", status: status || "published" }))
     .reverse();
   res.json(list);
 });
@@ -368,7 +406,7 @@ app.get("/api/admin/articles/:id", (req, res) => {
 });
 
 app.post("/api/admin/articles", async (req, res) => {
-  const { title, source, content, status } = req.body;
+  const { title, source, content, status, domain, highlight } = req.body;
   if (!title || !String(title).trim()) return res.status(400).json({ error: "خاص عنوان" });
   if (status === "published" && String(content || "").trim().length < 50) {
     return res.status(400).json({ error: "النص قصير بزاف باش يتنشر" });
@@ -379,6 +417,8 @@ app.post("/api/admin/articles", async (req, res) => {
     title: String(title).trim(),
     source: String(source || "").trim(),
     content: String(content || ""),
+    domain: cleanDomainId(domain),
+    highlight: cleanHighlight(highlight),
     status: status === "published" ? "published" : "draft",
     date: new Date().toISOString(),
   };
@@ -391,7 +431,9 @@ app.put("/api/admin/articles/:id", async (req, res) => {
   const list = load("reports.json");
   const a = list.find((x) => x.id === req.params.id);
   if (!a) return res.status(404).json({ error: "المقال ما كاينش" });
-  const { title, source, content, status } = req.body;
+  const { title, source, content, status, domain, highlight } = req.body;
+  if (domain !== undefined) a.domain = cleanDomainId(domain);
+  if (highlight !== undefined) a.highlight = cleanHighlight(highlight);
   if (title !== undefined) a.title = String(title).trim();
   if (source !== undefined) a.source = String(source).trim();
   if (content !== undefined) a.content = String(content);
@@ -513,6 +555,41 @@ app.get("/report/:id", (req, res) => {
   res.set("Cache-Control", "public, max-age=300").type("html").send(html);
 });
 
+// صفحة مجال مستقلة (للفهرسة): نفس قالب index.html مع meta خاصة
+app.get("/domain/:id", (req, res) => {
+  const d = DOMAINS.find((x) => x.id === req.params.id);
+  if (!d) {
+    return res.status(404).set("X-Robots-Tag", "noindex").send(
+      '<!doctype html><meta charset="utf-8"><title>404</title><p dir="rtl" style="font-family:sans-serif;padding:2em">المجال ما كاينش. <a href="/">رجوع للموقع</a></p>'
+    );
+  }
+  const url = siteUrl(req) + "/domain/" + d.id;
+  const title = d.label + " | سياسات";
+  const desc = "تقارير سياسات في مجال " + d.label + " (" + d.hint + ")، مبسطة بالدارجة المغربية مع المصدر الرسمي.";
+  const ld = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: d.label,
+    inLanguage: "ar-MA",
+    url,
+    isPartOf: { "@type": "WebSite", name: "سياسات", url: siteUrl(req) },
+  }).replace(/</g, "\\u003c");
+  const head =
+    `<meta name="description" content="${esc(desc)}">` +
+    `<link rel="canonical" href="${esc(url)}">` +
+    `<meta property="og:type" content="website"><meta property="og:locale" content="ar_MA">` +
+    `<meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">` +
+    `<meta property="og:url" content="${esc(url)}"><meta name="twitter:card" content="summary">` +
+    `<script type="application/ld+json">${ld}</script>`;
+  const html = template()
+    .replace(/<title>[\s\S]*?<\/title>/, "<title>" + esc(title) + "</title>")
+    .replace(/<meta name="description"[^>]*>\s*/, "")
+    .replace(/<link rel="canonical"[^>]*>\s*/, "")
+    .replace(/<meta property="og:[^>]*>\s*/g, "")
+    .replace("</head>", head + "</head>");
+  res.set("Cache-Control", "public, max-age=300").type("html").send(html);
+});
+
 app.get("/robots.txt", (req, res) => {
   res.type("text/plain").send(
     "User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /api/\nDisallow: /siyasat-onepage.html\n\nSitemap: " +
@@ -522,7 +599,9 @@ app.get("/robots.txt", (req, res) => {
 
 app.get("/sitemap.xml", (req, res) => {
   const base = siteUrl(req);
-  const urls = [{ loc: base + "/" }, { loc: base + "/about.html" }];
+  const urls = [{ loc: base + "/" }];
+  DOMAINS.forEach((d) => urls.push({ loc: base + "/domain/" + d.id }));
+  ["about", "contact", "privacy", "cookies", "terms"].forEach((n) => urls.push({ loc: base + "/" + n + ".html" }));
   load("reports.json").filter(isPublished).reverse().forEach((r) =>
     urls.push({ loc: base + "/report/" + encodeURIComponent(r.id), lastmod: String(r.date || "").slice(0, 10) })
   );
